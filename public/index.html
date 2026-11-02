@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Broker Tour Router · JVM Lending</title>
+<link rel="icon" href="jvm-icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* JVM Lending brand: teal #2D8692 primary, orange #F7AD50 accent, Montserrat headings, Open Sans body.
+   Layout: field clipboard — control strip on top, the day's route as a timeline on the left, the full tour sheet on the right; stacks route-first on phones. */
+:root{
+  --bg:#f3f7f7; --surface:#ffffff; --ink:#323232; --muted:#5d6e73; --line:#d7dfdf;
+  --accent:#2D8692; --accent-ink:#ffffff; --accent-soft:#D5F4F6;
+  --brand:#2D8692; --brand-deep:#226a74; --brand-orange:#F7AD50; --brand-ink:#ffffff;
+  --xl-yellow:#ffff00; --xl-yellow-ink:#1d1d00; --xl-yellow-line:#d6c800;
+  --hr:#f6d64a; --hr-ink:#4a3b00; --hr-soft:#fff6c9;
+  --ok:#2f7d4f; --warn:#b26a00; --bad:#b4332b; --must:#6a3fb5;
+  --display:"Montserrat","Helvetica Neue",Arial,sans-serif; --body:"Open Sans","Helvetica Neue",Arial,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --surface:#162226; --ink:#e4eeee; --muted:#93a6a9; --line:#283a3e;
+  --accent:#26A1B3; --accent-ink:#04191c; --accent-soft:#143338;
+  --brand:#1d5c64; --brand-deep:#164a51; --brand-orange:#F7AD50; --brand-ink:#ffffff;
+  --xl-yellow:#e2d43a; --xl-yellow-ink:#1d1d00; --xl-yellow-line:#b8ab22;
+  --hr:#e9c93a; --hr-ink:#2a2100; --hr-soft:#3a3214;
+  --ok:#6cc08d; --warn:#e3a443; --bad:#ef7b72; --must:#b596f0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --surface:#162226; --ink:#e4eeee; --muted:#93a6a9; --line:#283a3e;
+  --accent:#26A1B3; --accent-ink:#04191c; --accent-soft:#143338;
+  --brand:#1d5c64; --brand-deep:#164a51; --brand-orange:#F7AD50; --brand-ink:#ffffff;
+  --xl-yellow:#e2d43a; --xl-yellow-ink:#1d1d00; --xl-yellow-line:#b8ab22;
+  --hr:#e9c93a; --hr-ink:#2a2100; --hr-soft:#3a3214;
+  --ok:#6cc08d; --warn:#e3a443; --bad:#ef7b72; --must:#b596f0; color-scheme:dark}
+*{box-sizing:border-box}
+html{color-scheme:light}body{margin:0;font-family:var(--body)}[hidden]{display:none!important}img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;margin:0;line-height:1.1;color:var(--brand-ink);text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--muted)}
+.brandbar{background:var(--brand);color:var(--brand-ink);border-bottom:4px solid var(--brand-orange)}
+.brandbar-in{max-width:1280px;margin:0 auto;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0;flex:1 1 auto}
+.logo{display:block;height:30px;width:auto;flex:none}
+.logo-img{height:34px;width:auto;flex:none}
+.brand-div{width:1px;align-self:stretch;background:rgba(255,255,255,.35)}
+.brand-sub{font-size:12px;opacity:.85;margin-top:2px}
+.who{display:flex;align-items:center;gap:10px;font-size:13px}
+.who .email{opacity:.9;overflow-wrap:anywhere}
+.who button{background:transparent;color:var(--brand-ink);border-color:rgba(255,255,255,.55);padding:6px 12px}
+.who button:hover{border-color:var(--brand-orange);color:var(--brand-orange)}
+@media (max-width:520px){.brand-div{display:none}.brand{flex-wrap:wrap;gap:6px 12px}}
+.tabs{background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs-in{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tab{font-family:var(--display);font-weight:700;font-size:14px;color:var(--muted);text-decoration:none;padding:13px 12px 10px;border-bottom:3px solid transparent;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--ink);border-bottom-color:var(--brand-orange)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tab .count{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:0 7px;line-height:18px}
+.tab .count:empty{display:none}
+.view{display:flex;flex-direction:column;gap:16px}
+.page-title{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;text-transform:none;color:var(--ink);margin:0}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.page-head .sub{margin:4px 0 0;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.step{font-family:var(--mono);font-size:12px;font-weight:600;background:var(--ink);color:var(--surface);border-radius:5px;padding:1px 7px;margin-right:8px}
+.rules{display:flex;flex-wrap:wrap;gap:6px}
+.rule{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--bg);display:inline-flex;gap:6px;align-items:center;color:var(--ink)}
+.rule b{font-family:var(--mono);font-weight:600}
+.rule.yellow{background:var(--xl-yellow);border-color:var(--xl-yellow-line);color:var(--xl-yellow-ink)}
+.rule input{font:inherit;font-family:var(--mono);width:92px;border:1px solid var(--line);border-radius:5px;padding:1px 5px;background:var(--surface);color:var(--ink)}
+table.xl{min-width:1480px;font-size:12px}
+table.xl td,table.xl th{white-space:nowrap;padding:5px 8px}
+table.xl td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stoplist{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.stoplist-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.stoplist h3{margin:0;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stoplist-head button{padding:5px 10px;font-size:12px}
+#stopList{margin:0;padding-left:24px;display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.4}
+#stopList li{overflow-wrap:anywhere;padding-left:2px}
+#stopList li::marker{font-family:var(--mono);font-weight:600;color:var(--ink)}
+#stopList a{color:var(--accent);font-weight:700;text-decoration:none}
+#stopList a:hover{text-decoration:underline}
+#stopList .meta{color:var(--ink)}
+#stopList .hrtag{background:var(--xl-yellow);color:var(--xl-yellow-ink);border-radius:4px;padding:0 5px;font-weight:600;font-size:12px}
+#stopList a.g{font-weight:600;font-size:12px;color:var(--muted);margin-left:4px}
+.plan-empty{border:1px dashed var(--line);border-radius:8px;padding:22px 16px;color:var(--muted);text-align:center}
+table.xl tr.y td{background:var(--xl-yellow);color:var(--xl-yellow-ink)}
+table.xl .box{display:inline-block;width:12px;height:12px;border:1.5px solid currentColor;border-radius:2px;opacity:.6;vertical-align:middle}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.team{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--surface)}
+.team.shared{background:var(--bg)}
+.team h3{margin:0;font-family:var(--display);font-size:16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.team .n{font-family:var(--mono);font-size:20px;font-weight:600}
+.team .n small{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}
+.team.off .n{color:var(--muted)}
+.team .sub{font-size:12px}
+.citylist{display:flex;flex-wrap:wrap;gap:4px}
+.citylist .chip.has{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.team a.btn{align-self:flex-start;font-size:13px;padding:6px 10px}
+details.removed summary{cursor:pointer;color:var(--muted);font-size:13px}
+details.removed ul{margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--muted);columns:2 280px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.endpoints{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.ep{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--ink)}
+.ep b{font-family:var(--mono);font-size:11px;color:var(--accent);margin-right:4px}
+.trip{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+@media (max-width:760px){.trip{grid-template-columns:minmax(0,1fr)}.swap{justify-self:center;transform:none}}
+.tripend{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;min-width:0}
+.tripend input[type=text]{font:inherit;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+.tag{font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:var(--surface);border-radius:5px;padding:4px 7px}
+.locnote{grid-column:2 / -1;font-size:11px;color:var(--muted);min-height:1em}
+.locnote.bad{color:var(--bad)}
+.swap{padding:6px 10px;font-size:16px}
+@media (min-width:761px){.swap{transform:rotate(90deg)}}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.bar .grow{flex:1 1 auto}
+button,.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+button:hover,.btn:hover{border-color:var(--accent)}
+button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.field{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:var(--display);text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select{font:inherit;font-family:var(--mono);text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:auto}
+.field input[type=number]{width:64px}
+.field input[type=time]{width:110px}
+.field input[type=range]{width:110px;padding:0}
+.notice{border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:10px 12px;background:var(--surface);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.notice.warn{border-left-color:var(--warn)}
+.notice.info{border-left-color:var(--accent)}
+.notice p{margin:0;flex:1 1 320px;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.stats{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.stats b{display:block;font-family:var(--mono);font-size:18px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.maps{display:flex;flex-wrap:wrap;gap:8px}
+.maps .btn{flex:1 1 140px;justify-content:center}
+ol.route{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.leg{font-family:var(--mono);font-size:11px;color:var(--muted);padding:2px 0 2px 46px;position:relative}
+.leg::before{content:"";position:absolute;left:17px;top:0;bottom:0;border-left:2px dotted var(--line)}
+.stop{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px 0}
+.num{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:16px;background:var(--accent);color:var(--accent-ink)}
+.num.end{background:var(--ink);color:var(--surface);font-size:11px}
+.num.hr{background:var(--hr);color:var(--hr-ink)}
+.addr{font-weight:700;overflow-wrap:anywhere}
+.sub{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.eta{text-align:right;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.eta small{display:block;font-size:11px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.hr{background:var(--hr-soft);border-color:var(--hr);color:var(--ink)}
+.chip.bs{background:var(--accent-soft);border-color:transparent;color:var(--ink);font-family:var(--mono)}
+.chip.must{border-color:var(--must);color:var(--must)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.warn{color:var(--warn);border-color:var(--warn)}
+.chip.bad{color:var(--bad);border-color:var(--bad)}
+.chip.approx{border-style:dashed}
+.sketch{width:100%;max-width:100%;height:auto;display:block;background:var(--bg);border-radius:8px;border:1px solid var(--line)}
+.alts{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.alts div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
+.alts span:last-child{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
+th{font-family:var(--display);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0}
+td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.is-hr td{background:var(--hr-soft)}
+tr.is-skip td{opacity:.45}
+tr.in-route td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+td.num-col{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td input.bs{width:52px;font:inherit;font-family:var(--mono);padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink)}
+.tog{border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.tog.on.mustbtn{background:var(--must);border-color:var(--must);color:var(--surface)}
+.tog.on.hrbtn{background:var(--hr);border-color:var(--hr);color:var(--hr-ink)}
+.tog.on.skipbtn{background:var(--ink);color:var(--surface)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:16px;width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog textarea{width:100%;min-height:200px;font:inherit;font-family:var(--mono);font-size:13px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:10px}
+.status{font-size:12px;color:var(--muted);min-height:1.2em}
+.example-tag{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--warn)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="brandbar">
+  <div class="brandbar-in">
+    <div class="brand">
+      <img class="logo-img" id="logoImg" src="jvm-logo.png" alt="JVM Lending" hidden onload="this.hidden=false;document.getElementById('logoSvg').remove()" onerror="this.remove()">
+      <svg class="logo" id="logoSvg" viewBox="0 0 168 32" role="img" aria-label="JVM Lending">
+        <path d="M0 0H20A8 8 0 0 1 28 8V28H0Z" fill="#F7AD50" transform="translate(0 2)"/>
+        <text x="38" y="24" font-family="Montserrat,Arial,sans-serif" font-size="22" fill="#ffffff"><tspan font-weight="800">jvm</tspan><tspan font-weight="500">lending</tspan></text>
+      </svg>
+      <span class="brand-div" aria-hidden="true"></span>
+      <div><h1>Broker Tour Router</h1><div class="brand-sub">Internal tool for the JVM Lending team</div></div>
+    </div>
+    <div class="who" id="who" hidden><span class="email" id="whoEmail"></span><button type="button" id="signOut">Sign out</button></div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Pages"><div class="tabs-in">
+  <a class="tab" href="#plan" data-view="plan">Plan Today's Tour</a>
+  <a class="tab" href="#heejin" data-view="heejin">Heejin's Route <span class="count" id="cnt-heejin"></span></a>
+  <a class="tab" href="#aaron" data-view="aaron">Aaron's Route <span class="count" id="cnt-aaron"></span></a>
+  <a class="tab" href="#andrei" data-view="andrei">Andrei's Route <span class="count" id="cnt-andrei"></span></a>
+</div></nav>
+
+<div class="wrap">
+<section id="planView" class="view" aria-labelledby="planTitle" hidden>
+  <div class="page-head">
+    <div><h2 class="page-title" id="planTitle">Plan Today's Tour</h2><p class="sub">Clean the MLS Tour/Open House export, export the tour sheet, then split it into each person's route.</p></div>
+    <div class="actions">
+      <input type="file" id="rawIn" accept=".csv,.xls,.xlsx,text/csv" hidden>
+      <button type="button" class="primary" id="rawBtn">⇪ Upload Raw Data</button>
+      <button type="button" id="exportClean" disabled>⤓ Export tour sheet</button>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="cleanH">
+    <div class="panel-head"><h2 id="cleanH"><span class="step">1</span>Today's tour sheet</h2><div class="sub" id="cleanMeta"></div></div>
+    <div class="rules" id="ruleList"></div>
+    <div class="plan-empty" id="cleanEmpty">Upload the MLS Tour/Open House export (.csv or .xlsx). The cleaned sheet shows here in the same layout as the Monday Broker Tour file.</div>
+    <div class="tablewrap" id="cleanWrap" hidden><table class="xl">
+      <thead><tr><th>Visited</th><th>Call</th><th>Start</th><th>End</th><th>LS</th><th>BS</th><th>Listing Agent</th><th>Address</th><th>City</th><th>Price</th><th>Brokerage</th><th>Phone</th><th>Color</th><th>Status</th><th>Days On Market</th><th>Building Type</th><th>Cross Street</th><th>MLS #</th><th>Date</th></tr></thead>
+      <tbody id="cleanBody"></tbody>
+    </table></div>
+    <details class="removed" id="removedWrap" hidden><summary id="removedSum"></summary><ul id="removedList"></ul></details>
+    <div class="status" id="cleanStatus" role="status"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="teamH">
+    <div class="panel-head">
+      <h2 id="teamH"><span class="step">2</span>Split by team</h2>
+      <div class="actions">
+        <input type="file" id="teamIn" accept=".xlsx,.xls,.csv" hidden>
+        <button type="button" id="teamImport">⇪ Import Excel</button>
+        <button type="button" id="teamUseClean" disabled>Use today's sheet</button>
+        <button type="button" class="primary" id="exportTeam" disabled>⤓ Export team workbook</button>
+      </div>
+    </div>
+    <div class="teams" id="teams"></div>
+    <div class="status" id="teamStatus" role="status"></div>
+  </section>
+</section>
+
+<div id="routeView" class="view">
+  <header class="head">
+    <h2 class="page-title" id="routeTitle">Route</h2>
+    <div class="legend"><span><span class="chip hr">Homerun</span> highlighted / eligible</span><span><span class="chip must">Must visit</span> always routed</span><span><span class="chip approx">≈ ZIP</span> rough location</span></div>
+  </header>
+
+  <div class="trip">
+    <div class="tripend">
+      <span class="tag">Start</span>
+      <input type="text" id="startLoc" list="placeList" autocomplete="off" aria-label="Start location" placeholder="Address or place, with city or ZIP">
+      <label class="field">Leave <input type="time" id="startTime" value="09:30"></label>
+      <span class="locnote" id="startNote"></span>
+    </div>
+    <button type="button" class="swap" id="swapBtn" title="Swap start and end" aria-label="Swap start and end">⇅</button>
+    <div class="tripend">
+      <span class="tag end">End</span>
+      <input type="text" id="endLoc" list="placeList" autocomplete="off" aria-label="End location" placeholder="Address or place, with city or ZIP">
+      <label class="field">Done by <input type="time" id="endTime" value="13:30"></label>
+      <span class="locnote" id="endNote"></span>
+    </div>
+    <datalist id="placeList"></datalist>
+  </div>
+
+  <div class="bar">
+    <input type="file" id="fileIn" accept=".xls,.xlsx,.csv,text/csv" hidden>
+    <input type="file" id="photoIn" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
+    <button class="primary" id="importBtn" type="button">⇪ Import .xls / .csv</button>
+    <button id="pasteBtn" type="button">Paste addresses</button>
+    <button id="photoBtn" type="button" hidden>Add listing photos</button>
+    <span class="grow"></span>
+    <label class="field">Max stops <input type="number" id="stopCount" min="1" max="12" value="8"></label>
+    <label class="field">Min / stop <input type="number" id="dwell" min="3" max="45" value="10"></label>
+    <label class="field" title="How much extra driving a high-BS or Homerun listing is worth">Detour for value <input type="range" id="valueW" min="0" max="3" step="0.25" value="1"></label>
+  </div>
+
+  <div id="notices" style="display:flex;flex-direction:column;gap:8px"></div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="routeH">
+      <div class="panel-head"><h2 id="routeH">Today's route</h2><div class="stats" id="stats"></div></div>
+      <div class="maps">
+        <a class="btn primary" id="gmaps" target="_blank" rel="noopener">Open in Google Maps</a>
+        <a class="btn" id="amaps" target="_blank" rel="noopener">Open in Apple Maps</a>
+      </div>
+      <div class="stoplist" id="stopListWrap" hidden>
+        <div class="stoplist-head"><h3 id="stopListH">Stop list</h3><button type="button" id="copyStops">Copy stop list</button></div>
+        <ol id="stopList"></ol>
+        <textarea id="stopCopyBox" aria-hidden="true" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px"></textarea>
+      </div>
+      <svg class="sketch" id="sketch" viewBox="0 0 400 220" role="img" aria-label="Sketch of route order"></svg>
+      <ol class="route" id="route"></ol>
+      <div id="altsWrap" hidden><h2 style="margin-bottom:6px">Next best, not routed</h2><div class="alts" id="alts"></div></div>
+    </section>
+
+    <section class="panel" aria-labelledby="sheetH">
+      <div class="panel-head"><h2 id="sheetH">Tour sheet</h2><div class="sub" id="sheetMeta"></div></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>#</th><th>Address</th><th>Open</th><th>Price</th><th>BS</th><th>Homerun</th><th>Must</th><th>Skip</th></tr></thead>
+        <tbody id="sheet"></tbody>
+      </table></div>
+      <div class="status" id="sheetStatus"></div>
+    </section>
+  </div>
+</div>
+</div>
+
+<dialog id="pasteDlg">
+  <h2 style="margin-bottom:8px">Paste addresses</h2>
+  <p class="sub" style="margin:0 0 8px">One listing per line. Add hours and BS if you have them, e.g. <code>1863 Ruth Dr, Pleasant Hill 94523 · 9:30-12 · BS 14</code></p>
+  <textarea id="pasteText" placeholder="2541 Oak Rd, Walnut Creek 94597 10-12:30&#10;765 Moraga Rd, Lafayette 94549"></textarea>
+  <label class="field" style="margin-top:8px"><input type="checkbox" id="pasteReplace"> Replace current list</label>
+  <div class="status" id="pasteStatus"></div>
+  <div class="dlg-actions">
+    <button type="button" id="pasteCancel">Cancel</button>
+    <button type="button" id="pasteClaude" hidden>Read messy text with Claude</button>
+    <button type="button" class="primary" id="pasteAdd">Add to tour</button>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="tour-template.js"></script>
+<script src="tour-sheet.js"></script>
+<script>
+(function(){
+"use strict";
+// Known places: typing the name fills the full address and exact coordinates.
+const PRESETS=[
+  {label:"Pleasant Hill Senior Center",q:"233 Gregory Ln, Pleasant Hill, CA 94523",lat:37.9493,lng:-122.0603},
+  {label:"Broadway Plaza, Walnut Creek",q:"1275 Broadway Plaza, Walnut Creek, CA 94596",lat:37.8947,lng:-122.0590},
+  {label:"Alamo, CA",q:"Alamo, CA 94507",lat:37.8502,lng:-122.0322},
+  {label:"San Ramon, CA",q:"San Ramon, CA 94583",lat:37.7799,lng:-121.9780},
+  {label:"El Sobrante, CA 94803",q:"El Sobrante, CA 94803",lat:37.9771,lng:-122.2955}];
+// Each person's route page and its default start / end.
+const PEOPLE={
+  heejin:{name:"Heejin",start:"Alamo, CA",end:"San Ramon, CA"},
+  aaron:{name:"Aaron",start:"El Sobrante, CA 94803",end:"Broadway Plaza, Walnut Creek"},
+  andrei:{name:"Andrei",start:"Pleasant Hill Senior Center",end:"Broadway Plaza, Walnut Creek"}};
+let START={label:PRESETS[0].label,q:PRESETS[0].q,lat:PRESETS[0].lat,lng:PRESETS[0].lng,src:"preset"};
+let END={label:PRESETS[1].label,q:PRESETS[1].q,lat:PRESETS[1].lat,lng:PRESETS[1].lng,src:"preset"};
+let customPlaces=[]; // endpoints the user typed and pinned, remembered on this device
+const HR_PRICE_CAP=840000;
+
+// Approximate ZIP centroids — used only until a precise location is pinned.
+const ZIP={"94523":[37.954,-122.074],"94595":[37.873,-122.070],"94596":[37.899,-122.058],"94597":[37.919,-122.074],"94598":[37.916,-122.023],
+"94518":[37.950,-122.022],"94519":[37.984,-122.010],"94520":[37.983,-122.040],"94521":[37.958,-121.970],"94549":[37.893,-122.120],
+"94553":[37.990,-122.120],"94556":[37.838,-122.124],"94563":[37.878,-122.180],"94526":[37.813,-121.987],"94506":[37.808,-121.920],
+"94507":[37.850,-122.019],"94583":[37.766,-121.958],"94582":[37.765,-121.910],"94517":[37.941,-121.934],"94509":[37.993,-121.805],
+"94565":[38.010,-121.900],"94531":[37.965,-121.775],"94513":[37.930,-121.695],"94561":[37.995,-121.710],"94547":[38.010,-122.260],
+"94564":[38.000,-122.290],"94530":[37.920,-122.295],"94803":[37.960,-122.285],"94806":[37.975,-122.335],"94801":[37.940,-122.365],
+"94804":[37.920,-122.340],"94805":[37.940,-122.320],"94611":[37.830,-122.210],"94618":[37.844,-122.240],"94602":[37.805,-122.210],
+"94610":[37.812,-122.240],"94619":[37.790,-122.185],"94705":[37.865,-122.245],"94707":[37.895,-122.275],"94708":[37.900,-122.265],
+"94706":[37.890,-122.295],"94546":[37.705,-122.075],"94577":[37.715,-122.155],"94578":[37.705,-122.125],"94541":[37.675,-122.085],
+"94542":[37.655,-122.045],"94544":[37.635,-122.065],"94545":[37.630,-122.115],"94536":[37.560,-121.995],"94538":[37.525,-121.965],
+"94539":[37.515,-121.925],"94555":[37.560,-122.045],"94566":[37.660,-121.875],"94588":[37.690,-121.900],"94550":[37.680,-121.750],
+"94551":[37.700,-121.770],"94601":[37.776,-122.218],"94603":[37.739,-122.172],"94605":[37.762,-122.155],"94606":[37.793,-122.245],"94607":[37.805,-122.290],"94609":[37.835,-122.263],"94612":[37.809,-122.270],"94613":[37.781,-122.183],"94621":[37.742,-122.198],"94702":[37.866,-122.285],"94703":[37.863,-122.275],"94704":[37.866,-122.257],"94709":[37.879,-122.266],"94710":[37.866,-122.300],"94580":[37.677,-122.130],"94552":[37.712,-122.040],"94568":[37.715,-121.910],"94501":[37.765,-122.250],"94608":[37.835,-122.285],"94560":[37.530,-122.030],"94587":[37.595,-122.050]};
+const CITY={"pleasant hill":"94523","walnut creek":"94596","concord":"94520","lafayette":"94549","martinez":"94553","moraga":"94556","orinda":"94563",
+"danville":"94526","alamo":"94507","san ramon":"94583","clayton":"94517","antioch":"94509","pittsburg":"94565","brentwood":"94513","oakley":"94561",
+"hercules":"94547","pinole":"94564","el cerrito":"94530","richmond":"94804","berkeley":"94705","albany":"94706","oakland":"94611","piedmont":"94611",
+"castro valley":"94546","san leandro":"94577","hayward":"94541","fremont":"94536","pleasanton":"94566","livermore":"94550","dublin":"94568",
+"alameda":"94501","emeryville":"94608","newark":"94560","union city":"94587","bay point":"94565","kensington":"94707","el sobrante":"94803","san lorenzo":"94580"};
+
+const EXAMPLES=[
+["1863 Ruth Dr","Pleasant Hill","94523",37.9570,-122.0710,899000,14,"9:30","12:00"],
+["4 Bonnie Ln","Pleasant Hill","94523",37.9460,-122.0790,1150000,3,"10:00","12:30"],
+["2541 Oak Rd","Walnut Creek","94597",37.9290,-122.0560,625000,22,"9:30","11:30"],
+["1880 Ygnacio Valley Rd","Walnut Creek","94598",37.9180,-122.0390,975000,9,"10:00","13:00"],
+["3360 Clayton Rd","Concord","94519",37.9650,-122.0150,789000,11,"9:00","11:00"],
+["2805 Lancaster Rd","Walnut Creek","94598",37.9100,-122.0160,1395000,18,"10:30","13:00"],
+["765 Moraga Rd","Lafayette","94549",37.8860,-122.1180,1650000,7,"11:00","13:00"],
+["1414 Newell Ave","Walnut Creek","94596",37.8960,-122.0620,715000,5,"11:30","13:30"],
+["155 Lacassie Ave","Walnut Creek","94596",37.9030,-122.0640,849000,0,"10:00","12:00"],
+["1160 Rudgear Rd","Walnut Creek","94596",37.8800,-122.0490,1890000,25,"12:00","14:00"],
+["3891 Willow Pass Rd","Concord","94519",37.9790,-122.0300,699000,2,"9:30","12:30"],
+["2190 Geary Rd","Pleasant Hill","94523",37.9330,-122.0660,1025000,12,"9:30","12:00"],
+["1601 Saranap Ave","Walnut Creek","94595",37.8870,-122.0820,1210000,16,"10:00","12:00"],
+["5150 Clayton Rd","Concord","94521",37.9450,-121.9630,920000,20,"9:30","11:00"]];
+
+let state={listings:[],source:"example"};
+let uid=1;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function hm(min){if(min==null||isNaN(min))return"";let h=Math.floor(min/60),m=Math.round(min%60);if(m===60){h++;m=0}const ap=h>=12?"p":"a";let h12=h%12;if(h12===0)h12=12;return h12+":"+String(m).padStart(2,"0")+ap}
+function parseClock(tok,ctx){ // returns minutes from midnight
+  if(tok==null)return null;
+  if(typeof tok==="number"){ if(tok>0&&tok<1)return Math.round(tok*1440); if(tok>=1&&tok<=24)return tok<7?(tok+12)*60:tok*60; return null;}
+  const m=String(tok).trim().toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*(a|p|am|pm|noon)?/);
+  if(!m)return null;let h=+m[1],mi=+(m[2]||0);const ap=m[3];
+  if(h>23||mi>59)return null;
+  if(ap&&ap.startsWith("p")&&h<12)h+=12;else if(ap&&ap.startsWith("a")&&h===12)h=0;
+  else if(!ap||ap==="noon"){ if(h>=1&&h<=6)h+=12; if(ctx==="close"&&h<9)h+=12;}
+  return h*60+mi;
+}
+function parseWindow(s){
+  if(s==null||s==="")return[null,null];
+  if(typeof s==="number")return[parseClock(s),null];
+  const str=String(s).replace(/noon/ig,"12:00pm");
+  const parts=str.match(/\d{1,2}(?::\d{2})?\s*(?:am|pm|a|p)?(?![\d$,k])/gi);
+  if(!parts)return[null,null];
+  const nums=parts.filter(p=>{const n=parseInt(p);return n>=1&&n<=12||/:/.test(p)});
+  if(!nums.length)return[null,null];
+  let o=parseClock(nums[0],"open"),c=nums[1]?parseClock(nums[1],"close"):null;
+  if(c!=null&&o!=null&&c<=o)c+=720;
+  if(o!=null&&!/[ap]/i.test(nums[0])&&c!=null&&/p/i.test(nums[1]||"")&&o>=c)o-=720;
+  return[o,c];
+}
+function money(v){if(v==null||v==="")return null;if(typeof v==="number")return v;const s=String(v).toLowerCase().replace(/[$,\s]/g,"");const m=s.match(/([\d.]+)(m|k)?/);if(!m)return null;let n=parseFloat(m[1]);if(m[2]==="m")n*=1e6;else if(m[2]==="k")n*=1e3;return isNaN(n)?null:n}
+function fmtPrice(p){if(!p)return"";return p>=1e6?"$"+(p/1e6).toFixed(p%1e5?3:2).replace(/0+$/,"").replace(/\.$/,"")+"M":"$"+Math.round(p/1e3)+"K"}
+function intOrNull(v){if(v==null||v==="")return null;const n=parseInt(String(v).replace(/[^\d-]/g,""));return isNaN(n)?null:n}
+
+// The city follows the street, so take the city name that appears LAST and isn't part of a street name
+// ("100 Pleasant Hill Rd, Walnut Creek" → Walnut Creek).
+const STREET_WORD=/^\s*(rd|road|blvd|ave|avenue|st|street|dr|drive|ln|lane|way|ct|court|pl|place|cir|circle|pkwy|hwy|ter|terrace|loop|trl|sq)\b/i;
+function findCity(s){s=String(s||"").toLowerCase();let best=null,bi=-1;
+  for(const c in CITY){let i=s.lastIndexOf(c);while(i>=0){const before=s[i-1],after=s.slice(i+c.length);
+      const bounded=(i===0||/[\s,]/.test(before))&&(!after.length||/^[\s,.]/.test(after));
+      if(bounded&&!STREET_WORD.test(after)){if(i>bi){bi=i;best=c}break}
+      i=i>0?s.lastIndexOf(c,i-1):-1}}
+  return best}
+function locate(l){
+  if(l.lat!=null&&l.lng!=null&&l.locSrc)return;
+  let z=l.zip||(String(l.address+" "+(l.city||"")).match(/\b(9[45]\d{3})\b/)||[])[1],guessed=false;
+  if(!z&&l.city){z=CITY[l.city.toLowerCase().trim()];guessed=!!z}
+  if(!z){const c=findCity(l.address);if(c){z=CITY[c];guessed=true;if(!l.city)l.city=c.replace(/\b\w/g,x=>x.toUpperCase())}}
+  if(z&&ZIP[z]){if(!l.zip){l.zip=z;l.zipFromCity=guessed}l.lat=ZIP[z][0];l.lng=ZIP[z][1];l.locSrc="zip"}else{l.lat=null;l.lng=null;l.locSrc=null}
+}
+function applyHomerun(l){
+  if(l.hrManual!=null){l.homerun=l.hrManual;l.hrWhy=l.hrManual?"marked by you":"";return}
+  if(l.hrFile!=null){l.homerun=l.hrFile;l.hrWhy=l.hrFile?"highlighted in file":"";return}
+  const tract=(l.tract||"").toLowerCase();
+  if(/low|moderate/.test(tract)){l.homerun=true;l.hrWhy=(l.tract)+" tract";return}
+  if(l.price&&l.price<=HR_PRICE_CAP){l.homerun=true;l.hrWhy="≤ $840K";return}
+  l.homerun=false;l.hrWhy="";
+}
+function mk(o){const l=Object.assign({id:uid++,address:"",city:"",zip:"",price:null,bs:null,ls:null,agent:"",open:null,close:null,lat:null,lng:null,locSrc:null,must:false,skip:false,hrFile:null,hrManual:null,tract:""},o);locate(l);applyHomerun(l);return l}
+function loadExamples(){state.listings=EXAMPLES.map(e=>mk({address:e[0],city:e[1],zip:e[2],lat:e[3],lng:e[4],locSrc:"example",price:e[5],bs:e[6],open:parseClock(e[7],"open"),close:parseClock(e[8],"close"),example:true}));state.source="example"}
+
+// ---------- travel model ----------
+function km(a,b){const R=6371,t=Math.PI/180;const dLa=(b.lat-a.lat)*t,dLo=(b.lng-a.lng)*t;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+// Drive minutes: the first ~4 km of any leg is surface streets (~36 km/h); anything beyond that is
+// mostly freeway / expressway (~85 km/h). Plus 2 min to park and walk in. Calibrated so
+// Pleasant Hill → Antioch ≈ 30 min and Antioch → Walnut Creek ≈ 28 min, in line with Google.
+function drive(a,b){const d=km(a,b)*1.4;const local=Math.min(d,4),fast=Math.max(0,d-4);return 2+local/0.6+fast/1.42}
+function tval(id,def){const v=$(id).value||def;const [h,m]=v.split(":").map(Number);return h*60+m}
+function settings(){return{t0:tval("startTime","09:30"),tEnd:tval("endTime","13:30"),K:Math.max(1,Math.min(12,+$("stopCount").value||8)),dwell:Math.max(3,+$("dwell").value||10),vw:+$("valueW").value}}
+
+function evalRoute(stops,S){
+  let t=S.t0,pos=START,dr=0,wait=0,late=0,lateMin=0;const legs=[];
+  for(const s of stops){const d=drive(pos,s);t+=d;dr+=d;let w=0;if(s.open!=null&&t<s.open){w=s.open-t;wait+=w;t=s.open}
+    let L=0;if(s.close!=null&&t+S.dwell>s.close){L=t+S.dwell-s.close;late++;lateMin+=L}
+    legs.push({drive:d,arrive:t,wait:w,late:L});t+=S.dwell;pos=s}
+  const dEnd=drive(pos,END);dr+=dEnd;t+=dEnd;
+  return{drive:dr,wait,late,lateMin,legs,endDrive:dEnd,finish:t};
+}
+let VALUE_SCALE={maxBS:1};
+function value(s,S){const bs=Math.sqrt(Math.max(0,s.bs||0)/VALUE_SCALE.maxBS);return S.vw*(5*bs+(s.homerun?3:0))} // at the default slider, the top-BS agent is worth ~5 extra minutes of driving, Homerun ~3
+function cost(stops,S){const r=evalRoute(stops,S);let v=0;for(const s of stops)v+=value(s,S);const over=Math.max(0,r.finish-S.tEnd);return r.drive+0.6*r.wait+400*r.late+4*r.lateMin+(over>0?200+8*over:0)-v}
+
+function bestInsert(route,c,S,fixedCost){let best=null;for(let i=0;i<=route.length;i++){const r=route.slice(0,i).concat([c],route.slice(i));const k=cost(r,S);if(!best||k<best.k)best={k,r}}return best}
+function improve(route,pool,S){
+  let cur=cost(route,S),changed=true,guard=0;
+  while(changed&&guard++<300){changed=false;
+    // relocate
+    for(let i=0;i<route.length&&!changed;i++){const s=route[i];const rest=route.slice(0,i).concat(route.slice(i+1));const b=bestInsert(rest,s,S);if(b.k<cur-1e-6){route=b.r;cur=b.k;changed=true}}
+    // 2-opt
+    for(let i=0;i<route.length-1&&!changed;i++)for(let j=i+1;j<route.length&&!changed;j++){const r=route.slice(0,i).concat(route.slice(i,j+1).reverse(),route.slice(j+1));const k=cost(r,S);if(k<cur-1e-6){route=r;cur=k;changed=true}}
+    // swap in an outside listing
+    for(let i=0;i<route.length&&!changed;i++){if(route[i].must)continue;const rest=route.slice(0,i).concat(route.slice(i+1));
+      for(const c of pool){if(route.includes(c))continue;const b=bestInsert(rest,c,S);if(b.k<cur-1e-6){route=b.r;cur=b.k;changed=true;break}}}
+  }
+  return{route,k:cur};
+}
+function optimize(){
+  const S=settings();
+  if(START.lat==null||END.lat==null)return{S,route:[],pool:[],blocked:true,unlocated:[]};
+  const pool=state.listings.filter(l=>!l.skip&&l.lat!=null);
+  VALUE_SCALE.maxBS=Math.max(1,...pool.map(l=>l.bs||0));
+  const must=pool.filter(l=>l.must);
+  if(!pool.length)return{S,route:[],pool,unlocated:state.listings.filter(l=>!l.skip&&l.lat==null)};
+  const Kmax=Math.min(Math.max(S.K,must.length),pool.length),Kmin=Math.max(1,must.length);
+  let res=null;
+  for(let K=Kmax;K>=Kmin;K--){res=solve(K);if(res.ev.finish<=S.tEnd)break}
+  res.Kasked=Kmax;return res;
+  function solve(K){
+  const build=(seed)=>{let r=[];for(const m of must)r=bestInsert(r,m,S).r;if(seed&&!r.includes(seed)&&r.length<K)r=bestInsert(r,seed,S).r;
+    while(r.length<Math.min(K,pool.length)){let best=null;for(const c of pool){if(r.includes(c))continue;const b=bestInsert(r,c,S);if(!best||b.k<best.k)best=b}r=best.r}
+    return improve(r,pool,S)};
+  let best=build(null);
+  const seeds=pool.filter(p=>!p.must).sort((a,b)=>value(b,S)-value(a,S)).slice(0,10);
+  for(const s of seeds){const r=build(s);if(r.k<best.k-1e-6)best=r}
+  const route=best.route;
+  // alternates: cheapest marginal additions not in route
+  const alts=pool.filter(p=>!route.includes(p)).map(p=>{let bestSwap=null;for(let i=0;i<route.length;i++){if(route[i].must)continue;const rest=route.slice(0,i).concat(route.slice(i+1));const b=bestInsert(rest,p,S);if(!bestSwap||b.k<bestSwap.k)bestSwap={k:b.k,out:route[i]}}return{p,delta:bestSwap?bestSwap.k-best.k:Infinity,out:bestSwap&&bestSwap.out}}).sort((a,b)=>a.delta-b.delta).slice(0,5);
+  return{S,route,pool,alts,ev:evalRoute(route,S),unlocated:state.listings.filter(l=>!l.skip&&l.lat==null)};
+  }
+}
+
+// ---------- maps links ----------
+function fullAddr(l){let a=l.address;if(l.city&&!a.toLowerCase().includes(l.city.toLowerCase()))a+=", "+l.city;if(!/\bCA\b/i.test(a))a+=", CA";if(l.zip&&!l.zipFromCity&&!a.includes(l.zip))a+=" "+l.zip;return a}
+function gmapsUrl(route){const p=new URLSearchParams({api:"1",origin:START.q,destination:END.q,travelmode:"driving"});if(route.length)p.set("waypoints",route.map(fullAddr).join("|"));return"https://www.google.com/maps/dir/?"+p.toString()}
+// Apple's unified Maps URL (iOS 18.4+ / macOS 15.4+): one waypoint param per stop, in order.
+// Older iPhones/Macs (before iOS 18.4 / macOS 15.4) don't understand that link, so give them the classic "to:" chain.
+function appleNeedsLegacy(){const ua=navigator.userAgent||"";let m=ua.match(/(?:iPhone|iPad|CPU) OS (\d+)_(\d+)/);if(m)return(+m[1]<18)||(+m[1]===18&&+m[2]<4);
+  m=ua.match(/Version\/(\d+)\.(\d+)[^ ]* Safari/);if(/Macintosh/.test(ua)&&m)return(+m[1]<18)||(+m[1]===18&&+m[2]<4);return false}
+function amapsUrl(route){if(appleNeedsLegacy())return"https://maps.apple.com/?saddr="+encodeURIComponent(START.q)+"&daddr="+[...route.map(fullAddr),END.q].map(encodeURIComponent).join("+to:")+"&dirflg=d";
+  const p=new URLSearchParams();p.append("source",START.q);p.append("destination",END.q);route.forEach(l=>p.append("waypoint",fullAddr(l)));p.append("mode","driving");return"https://maps.apple.com/directions?"+p.toString().replace(/\+/g,"%20")}
+
+// ---------- render ----------
+let lastRun=null;
+function windowChip(l,leg,S){
+  if(l.open==null&&l.close==null)return'<span class="chip">no hours listed</span>';
+  const w=(l.open!=null?hm(l.open):"?")+"–"+(l.close!=null?hm(l.close):"?");
+  if(!leg)return'<span class="chip">'+w+'</span>';
+  if(leg.late>0)return'<span class="chip bad">'+w+' · closes before you finish</span>';
+  if(leg.wait>4)return'<span class="chip warn">'+w+' · wait '+Math.round(leg.wait)+' min</span>';
+  if(l.close!=null&&l.close-(leg.arrive+S.dwell)<15)return'<span class="chip warn">'+w+' · tight</span>';
+  return'<span class="chip ok">'+w+'</span>';
+}
+function locChip(l){if(l.locSrc==="zip")return'<span class="chip approx">≈ ZIP '+esc(l.zip)+'</span>';if(l.locSrc==="claude")return'<span class="chip">pinned</span>';return""}
+function render(){
+  const run=optimize();lastRun=run;const S=run.S,route=run.route,ev=run.ev;
+  const inRoute=new Set(route.map(r=>r.id));
+  // notices
+  const n=[];
+  if(!state.listings.length)n.push('<div class="notice info"><p><b>No stops yet for '+esc(PEOPLE[current].name)+'.</b> Split today\'s tour sheet on Plan Today\'s Tour and this page fills in, or import a file here.</p><a class="btn" href="#plan">Go to Plan Today\'s Tour</a></div>');
+  if(state.source==="example")n.push('<div class="notice info"><p><span class="example-tag">Example tour</span> These 14 listings are sample data so you can see how routing works. Import your tour sheet to replace them.</p><button type="button" data-act="import">Import .xls / .csv</button></div>');
+  const approx=state.listings.filter(l=>!l.skip&&(l.locSrc==="zip"||l.lat==null));
+  if(approx.length&&state.source!=="example")n.push('<div class="notice warn"><p><b>'+approx.length+' listing'+(approx.length>1?"s are":" is")+' placed by ZIP only.</b> Listings in the same ZIP sit on one point, so the order inside a town can zigzag. Pin them before you drive.</p><button type="button" class="primary" id="pinBtn" '+(!pinning?"":"disabled")+'>'+(pinning?"Pinning…":"Pin exact locations")+'</button></div>');
+  [["Start",START],["End",END]].forEach(([w,p])=>{if(p.src==="none")n.push('<div class="notice warn"><p><b>'+w+' location couldn\'t be placed.</b> Add a city or ZIP, or pick a saved place. The route is on hold until it\'s placed.</p><button type="button" class="pinEnd" '+(pinning?"disabled":"")+'>Pin location</button></div>');
+    else if(p.src==="zip")n.push('<div class="notice warn"><p><b>'+w+' is placed by ZIP/city only.</b> Pin it for a more accurate first or last leg.</p><button type="button" class="pinEnd" '+(pinning?"disabled":"")+'>Pin location</button></div>')});
+  if(ev&&route.length<run.Kasked&&ev.finish<=S.tEnd)n.push('<div class="notice info"><p>Trimmed to <b>'+route.length+' stops</b> so you\'re done by '+hm(S.tEnd)+'. Move "Done by" later or shorten minutes per stop to fit more.</p></div>');
+  if(ev&&ev.finish>S.tEnd)n.push('<div class="notice warn"><p>This route finishes at <b>'+hm(ev.finish)+'</b>, after your '+hm(S.tEnd)+' end time, even with the fewest stops allowed (must-visits count). Move "Done by" later or remove a must-visit.</p></div>');
+  if(ev&&ev.late)n.push('<div class="notice warn"><p>'+ev.late+' stop'+(ev.late>1?"s":"")+' can\'t be reached before closing with this start time. Try an earlier start, fewer stops, or skip the red one.</p></div>');
+  $("notices").innerHTML=n.join("");
+  // stats
+  if(route.length){const hrN=route.filter(r=>r.homerun).length,bsT=route.reduce((a,r)=>a+(r.bs||0),0);
+    $("stats").innerHTML='<span><b>'+route.length+'</b>stops</span><span><b>'+Math.round(ev.drive)+'m</b>driving</span><span><b>'+hm(ev.finish)+'</b>finish</span><span><b>'+bsT+'</b>total BS</span><span><b>'+hrN+'</b>Homerun</span>'}
+  else $("stats").innerHTML="";
+  // route
+  const ol=$("route");
+  if(run.blocked){ol.innerHTML='<li class="empty">Waiting on a location for your '+(START.lat==null?"start":"end")+'. Add a city or ZIP to it, or pin it with Claude, and the route will build from there.</li>'}
+  else if(!route.length){ol.innerHTML='<li class="empty">No routable listings yet. Import a sheet, paste addresses, or un-skip some rows.</li>'}
+  else{let h='<li class="stop"><span class="num end">GO</span><div><div class="addr">'+esc(START.label)+'</div><div class="sub">'+esc(START.label!==START.q?START.q:"")+'</div></div><div class="eta">'+hm(S.t0)+'<small>depart</small></div></li>';
+    route.forEach((l,i)=>{const lg=ev.legs[i];h+='<li class="leg">↓ '+Math.round(lg.drive)+' min drive</li>';
+      h+='<li class="stop"><span class="num'+(l.homerun?" hr":"")+'">'+(i+1)+'</span><div><div class="addr">'+esc(l.address)+'</div><div class="sub">'+esc([l.city,fmtPrice(l.price),l.agent].filter(Boolean).join(" · "))+'</div><div class="chips">'+windowChip(l,lg,S)+(l.bs!=null?'<span class="chip bs">BS '+l.bs+'</span>':'<span class="chip">BS ?</span>')+(l.homerun?'<span class="chip hr" title="'+esc(l.hrWhy)+'">Homerun</span>':"")+(l.must?'<span class="chip must">Must</span>':"")+locChip(l)+'</div></div><div class="eta">'+hm(lg.arrive)+'<small>leave '+hm(lg.arrive+S.dwell)+'</small></div></li>'});
+    h+='<li class="leg">↓ '+Math.round(ev.endDrive)+' min drive</li><li class="stop"><span class="num end">END</span><div><div class="addr">'+esc(END.label)+'</div><div class="sub">'+esc(END.label!==END.q?END.q:"")+'</div></div><div class="eta"'+(ev.finish>S.tEnd?' style="color:var(--bad)"':'')+'>'+hm(ev.finish)+'<small>done by '+hm(S.tEnd)+'</small></div></li>';
+    ol.innerHTML=h}
+  // alternates
+  if(run.alts&&run.alts.length){$("altsWrap").hidden=false;$("alts").innerHTML=run.alts.map(a=>'<div><span><b>'+esc(a.p.address)+'</b> <span class="sub">'+(a.p.homerun?"Homerun · ":"")+"BS "+(a.p.bs??"?")+(a.out?" · would replace "+esc(a.out.address):"")+'</span></span><span>'+(isFinite(a.delta)?"+"+Math.max(1,Math.round(a.delta))+" pts":"")+'</span></div>').join("")}else $("altsWrap").hidden=true;
+  // maps
+  $("gmaps").href=gmapsUrl(route);$("amaps").href=amapsUrl(route);
+  ["gmaps","amaps"].forEach(id=>{$(id).setAttribute("aria-disabled",run.blocked?"true":"false");$(id).style.pointerEvents=run.blocked?"none":"";$(id).style.opacity=run.blocked?".45":""});
+  if(run.blocked)$("sketch").innerHTML="";else drawSketch(route);
+  renderStopList(run);
+  // sheet
+  const order=new Map(route.map((r,i)=>[r.id,i+1]));
+  const rows=state.listings.slice().sort((a,b)=>(order.get(a.id)||99)-(order.get(b.id)||99));
+  $("sheet").innerHTML=rows.map(l=>'<tr class="'+[l.homerun?"is-hr":"",l.skip?"is-skip":"",inRoute.has(l.id)?"in-route":""].join(" ")+'" data-id="'+l.id+'"><td class="num-col">'+(order.get(l.id)||"–")+'</td><td><div class="addr">'+esc(l.address)+'</div><div class="sub">'+esc(l.city||"")+(l.lat==null?' · <span style="color:var(--bad)">not located</span>':l.locSrc==="zip"?" · ≈ZIP":"")+'</div></td><td class="num-col">'+((l.open!=null||l.close!=null)?(hm(l.open)||"?")+"–"+(hm(l.close)||"?"):"—")+'</td><td class="num-col">'+fmtPrice(l.price)+'</td><td><input class="bs" type="number" min="0" id="bs-'+l.id+'" value="'+(l.bs??"")+'" aria-label="Buy side count"></td><td><button type="button" class="tog hrbtn'+(l.homerun?" on":"")+'" data-tog="hr" title="'+esc(l.hrWhy||"Not eligible")+'">'+(l.homerun?"Yes":"No")+'</button></td><td><button type="button" class="tog mustbtn'+(l.must?" on":"")+'" data-tog="must">'+(l.must?"Must":"—")+'</button></td><td><button type="button" class="tog skipbtn'+(l.skip?" on":"")+'" data-tog="skip">'+(l.skip?"Skipped":"Skip")+'</button></td></tr>').join("")||'<tr><td colspan="8" class="empty">No listings yet.</td></tr>';
+  $("sheetMeta").textContent=state.listings.length+" listings"+(state.fileName?" · "+state.fileName:"");
+  save();
+}
+// Stop list: each stop in route order, linked to Apple Maps, with LS / BS, HomeRun and hours
+let stopText="";
+function stopMeta(l,lg){const parts=["LS "+(l.ls??"–")+" / BS "+(l.bs??"–")];
+  if(l.open!=null||l.close!=null)parts.push((l.open!=null?hm(l.open):"?")+"–"+(l.close!=null?hm(l.close):"?"));
+  if(lg)parts.push("arrive "+hm(lg.arrive));return parts}
+function renderStopList(run){
+  const route=run.route,ev=run.ev,wrap=$("stopListWrap");
+  if(run.blocked||!route.length){wrap.hidden=true;stopText="";return}
+  wrap.hidden=false;
+  $("stopListH").textContent="Stop list · "+route.length+" stop"+(route.length>1?"s":"");
+  const lines=[(PEOPLE[current]?PEOPLE[current].name+"'s route":"Route")+": "+START.label+" → "+END.label];
+  $("stopList").innerHTML=route.map((l,i)=>{
+    const lg=ev.legs[i],name=(l.agent?l.agent+" – ":"")+l.address;
+    const apple="https://maps.apple.com/place?"+new URLSearchParams({address:fullAddr(l),name}).toString().replace(/\+/g,"%20");
+    const google="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(fullAddr(l));
+    const meta=stopMeta(l,lg);
+    lines.push((i+1)+". "+name+" · "+meta[0]+(l.homerun?" · HomeRun":"")+(meta.slice(1).length?" · "+meta.slice(1).join(" · "):"")+"\n   "+apple);
+    return '<li><a href="'+esc(apple)+'" target="_blank" rel="noopener">'+esc(name)+'</a> <span class="meta">· '+esc(meta[0])+(l.homerun?' · <span class="hrtag">HomeRun</span>':'')+(meta.slice(1).length?' · '+esc(meta.slice(1).join(" · ")):'')+'</span><a class="g" href="'+esc(google)+'" target="_blank" rel="noopener">Google</a></li>'}).join("");
+  stopText=lines.join("\n");
+}
+function drawSketch(route){
+  const svg=$("sketch");const pts=[START,...route,END];
+  const lats=pts.map(p=>p.lat),lngs=pts.map(p=>p.lng);
+  const midLat=(Math.max(...lats)+Math.min(...lats))/2,kx=Math.cos(midLat*Math.PI/180);
+  let x0=Math.min(...lngs)*kx,x1=Math.max(...lngs)*kx,y0=Math.min(...lats),y1=Math.max(...lats);
+  const W=400,H=220,pad=24;const sx=(x1-x0)||0.01,sy=(y1-y0)||0.01;const sc=Math.min((W-2*pad)/sx,(H-2*pad)/sy);
+  const ox=(W-sx*sc)/2,oy=(H-sy*sc)/2;
+  const P=p=>[ox+(p.lng*kx-x0)*sc,H-(oy+(p.lat-y0)*sc)];
+  const all=state.listings.filter(l=>l.lat!=null&&!route.includes(l)&&!l.skip);
+  let g='';
+  for(const l of all){const [x,y]=P(l);if(x<0||x>W||y<0||y>H)continue;g+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="var(--line)"/>'}
+  g+='<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 4" points="'+pts.map(p=>P(p).map(v=>v.toFixed(1)).join(",")).join(" ")+'"/>';
+  pts.forEach((p,i)=>{const [x,y]=P(p);const isEnd=i===0||i===pts.length-1;const hr=!isEnd&&p.homerun;
+    g+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(isEnd?7:9)+'" fill="'+(isEnd?"var(--ink)":hr?"var(--hr)":"var(--accent)")+'" stroke="var(--bg)" stroke-width="2"/>';
+    g+='<text x="'+x.toFixed(1)+'" y="'+(y+3.5).toFixed(1)+'" text-anchor="middle" font-family="Archivo,sans-serif" font-weight="800" font-size="10" fill="'+(isEnd?"var(--surface)":hr?"var(--hr-ink)":"var(--accent-ink)")+'">'+(i===0?"S":i===pts.length-1?"E":i)+'</text>'});
+  svg.innerHTML=g;
+}
+
+// ---------- persistence ----------
+let profiles={},current="aaron",view="plan";
+function placeFrom(label){const p=PRESETS.find(x=>x.label===label);return{label:p.label,q:p.q,lat:p.lat,lng:p.lng,src:"preset"}}
+function defaultProfile(k){return{listings:[],source:"empty",fileName:"",start:placeFrom(PEOPLE[k].start),end:placeFrom(PEOPLE[k].end),s:{t:"09:30",te:"13:30",k:8,d:10,v:1}}}
+// copy what's on screen into the current person's saved route
+function snapshot(){const p=profiles[current];if(!p)return;p.listings=state.listings;p.source=state.source;p.fileName=state.fileName;p.start=START;p.end=END;
+  p.s={t:$("startTime").value,te:$("endTime").value,k:$("stopCount").value,d:$("dwell").value,v:$("valueW").value}}
+function loadProfile(k){current=k;const p=profiles[k];state.listings=p.listings;state.source=p.source;state.fileName=p.fileName;START=p.start;END=p.end;
+  const s=p.s||{};$("startTime").value=s.t||"09:30";$("endTime").value=s.te||"13:30";$("stopCount").value=s.k||8;$("dwell").value=s.d||10;$("valueW").value=s.v??1}
+function updateCounts(){for(const k in PEOPLE){const el=$("cnt-"+k);if(el){const n=(profiles[k]&&profiles[k].listings.filter(l=>!l.skip).length)||0;el.textContent=n?String(n):""}}}
+function save(){snapshot();try{localStorage.setItem("btr.v2",JSON.stringify({profiles,current,view,places:customPlaces,plan}))}catch(e){}updateCounts()}
+function restore(){
+  let o=null;try{o=JSON.parse(localStorage.getItem("btr.v2")||"null")}catch(e){}
+  if(o&&o.profiles){profiles=o.profiles;if(Array.isArray(o.places))customPlaces=o.places;if(o.plan)plan=Object.assign(plan,o.plan);view=o.view||"plan";current=o.current||"aaron"}
+  else{ // the earlier single page used Andrei's start/end, so carry its stops over to Andrei's Route
+    try{const v1=JSON.parse(localStorage.getItem("btr.v1")||"null");
+      if(v1&&Array.isArray(v1.listings)){if(Array.isArray(v1.places))customPlaces=v1.places;
+        if(v1.source!=="example"){const a=defaultProfile("andrei");a.listings=v1.listings;a.source=v1.source;a.fileName=v1.fileName||"";if(v1.s)a.s=v1.s;
+          if(v1.start&&typeof v1.start.lat==="number")a.start=v1.start;if(v1.end&&typeof v1.end.lat==="number")a.end=v1.end;profiles.andrei=a}}}catch(e){}}
+  for(const k in PEOPLE)if(!profiles[k]||!Array.isArray(profiles[k].listings)||!profiles[k].start||!profiles[k].end)profiles[k]=defaultProfile(k);
+  if(!PEOPLE[current])current="aaron";
+  uid=1+Math.max(0,...Object.values(profiles).flatMap(p=>p.listings.map(l=>l.id||0)));
+  loadProfile(current);
+}
+
+// ---------- file import ----------
+const COLS={
+  address:/^(full\s*)?(street\s*)?address|^addr|^street|^property|^location$/i,
+  city:/^city|^town/i, zip:/^zip|postal/i, price:/price|list\s*\$|^lp$|^amount/i,
+  bs:/^bs$|buy\s*side|buyer|b\/s/i, ls:/^ls$|list\s*side|seller|l\/s/i,
+  agent:/agent|realtor|listing\s*by/i, open:/^(open|start)(\s*time)?$|start\s*time|time\s*from|^from$/i, close:/^(close|end)(\s*time)?$|end\s*time|time\s*to|^to$|^until/i,
+  hours:/hours|^time$|window|tour\s*time/i, color:/^colou?r$/i, lat:/^lat/i, lng:/^(lng|lon|long)/i,
+  hr:/home\s*run|homerun|highlight|eligible/i, tract:/tract|income/i, unit:/^unit|^apt/i
+};
+function findHeader(rows){for(let i=0;i<Math.min(15,rows.length);i++){const r=rows[i]||[];if(r.some(c=>c&&COLS.address.test(String(c).trim())))return i}return 0}
+function mapCols(hdr){const m={};hdr.forEach((h,i)=>{const s=String(h||"").trim();if(!s)return;for(const k in COLS){if(m[k]==null&&COLS[k].test(s)){if(k==="hours"&&(m.open!=null))continue;m[k]=i;break}}});return m}
+function isYellow(rgb){if(!rgb||rgb.length<6)return false;rgb=rgb.slice(-6);const r=parseInt(rgb.slice(0,2),16),g=parseInt(rgb.slice(2,4),16),b=parseInt(rgb.slice(4,6),16);return r>200&&g>180&&b<150}
+function cellFill(c){const s=c&&c.s;if(!s)return null;const fg=s.fgColor||(s.fill&&s.fill.fgColor);if(fg&&fg.rgb)return fg.rgb;return null}
+function importFile(file){
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const wb=XLSX.read(new Uint8Array(rd.result),{type:"array",cellStyles:true,cellDates:false});
+    const want=(PEOPLE[current]&&PEOPLE[current].name||"").toLowerCase();
+    const sheetName=wb.SheetNames.find(n=>n.trim().toLowerCase()===want)||wb.SheetNames[0];
+    const ws=wb.Sheets[sheetName];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
+    const hi=findHeader(rows);const cm=mapCols(rows[hi]||[]);
+    if(cm.address==null){setStatus("Couldn't find an Address column in "+file.name+". Check the header row, or paste the addresses instead.");return}
+    const range=XLSX.utils.decode_range(ws["!ref"]);let fillsSeen=0;const out=[];
+    for(let r=hi+1;r<rows.length;r++){const row=rows[r];const g=k=>cm[k]!=null?row[cm[k]]:"";
+      let address=String(g("address")||"").trim();if(!address)continue;
+      if(cm.unit!=null&&g("unit"))address+=" #"+String(g("unit")).trim();
+      let open=null,close=null;
+      if(cm.open!=null){open=parseClock(g("open"),"open");close=cm.close!=null?parseClock(g("close"),"close"):null;if(open!=null&&close==null&&typeof g("open")==="string"){[open,close]=parseWindow(g("open"))}}
+      else if(cm.hours!=null){[open,close]=parseWindow(g("hours"))}
+      if(open!=null&&close!=null&&close<=open)close+=720;
+      // highlight detection across the row
+      let yellow=0,filled=0;for(let c=range.s.c;c<=range.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r:r,c:c})];const f=cellFill(cell);if(f&&!/^(FF)?FFFFFF$/i.test(f)&&!/^0*$/.test(f)){filled++;if(isYellow(f))yellow++}}
+      if(filled)fillsSeen++;
+      let hrFile=null;if(cm.hr!=null&&String(g("hr")).trim()!==""){hrFile=/^(y|yes|true|1|x|eligible|✓)/i.test(String(g("hr")).trim())}else if(cm.color!=null&&String(g("color")).trim()!==""){hrFile=String(g("color")).trim().toLowerCase()==="yellow"}else if(yellow>0)hrFile=true;
+      const lat=cm.lat!=null?parseFloat(g("lat")):NaN,lng=cm.lng!=null?parseFloat(g("lng")):NaN;
+      out.push({address,city:String(g("city")||"").trim(),zip:String(g("zip")||"").trim().slice(0,5),price:money(g("price")),bs:intOrNull(g("bs")),ls:intOrNull(g("ls")),agent:String(g("agent")||"").split(" - ")[0].trim(),open,close,tract:String(g("tract")||""),hrFile,
+        lat:isNaN(lat)?null:lat,lng:isNaN(lng)?null:lng,locSrc:(!isNaN(lat)&&!isNaN(lng))?"file":null});
+    }
+    // dedupe by address
+    const seen=new Set();const uniq=out.filter(o=>{const k=o.address.toLowerCase().replace(/\W/g,"");if(seen.has(k))return false;seen.add(k);return true});
+    // if no fills anywhere, don't treat "no fill" as "not eligible": fall back to rules
+    if(!fillsSeen&&cm.hr==null&&cm.color==null)uniq.forEach(o=>o.hrFile=null);
+    else if(cm.hr==null&&cm.color==null)uniq.forEach(o=>{if(o.hrFile==null)o.hrFile=false});
+    state.listings=uniq.map(mk);state.source="file";state.fileName=file.name;
+    const noHours=uniq.filter(o=>o.open==null).length;
+    setStatus("Imported "+uniq.length+" listings from "+file.name+(wb.SheetNames.length>1?" ("+sheetName+" sheet)":"")+(out.length>uniq.length?" ("+(out.length-uniq.length)+" duplicates removed)":"")+". Homerun from "+(cm.hr!=null?"the "+rows[hi][cm.hr]+" column":cm.color!=null?"the Color column (yellow)":fillsSeen?"row highlights":"price ≤ $840K / Low–Moderate tract")+"."+(noHours?" "+noHours+" without hours.":""));
+    render();autoPin();
+  }catch(e){setStatus("Couldn't read "+file.name+": "+(e.message||e)+". Try saving it as .xlsx or .csv.")}};
+  rd.readAsArrayBuffer(file);
+}
+function setStatus(t){$("sheetStatus").textContent=t}
+
+// ---------- paste ----------
+function parseLine(line){
+  let s=line.trim();if(!s)return null;
+  let bs=null;s=s.replace(/\bBS[:\s]*?(\d+)\b/i,(m,n)=>{bs=+n;return""});
+  let price=null;s=s.replace(/\$\s?[\d,.]+\s?[mk]?/i,m=>{price=money(m);return""});
+  const must=/\bmust\b|\*\s*$/i.test(s);s=s.replace(/\bmust\b|\*\s*$/ig,"");
+  // hours like 9:30-12, 10am-1pm
+  let open=null,close=null;s=s.replace(/(\d{1,2}(?::\d{2})?\s*(?:am|pm|a|p)?)\s*(?:-|–|to)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm|a|p)?)(?=\s|$|·|,)/i,(m)=>{[open,close]=parseWindow(m);return""});
+  s=s.replace(/[·|]+/g," ").replace(/\s{2,}/g," ").replace(/[,\s]+$/,"").trim();
+  const zip=(s.match(/\b(9[45]\d{3})\b/)||[])[1]||"";
+  const cKey=findCity(s);let city=cKey?cKey.replace(/\b\w/g,x=>x.toUpperCase()):"";
+  let address=s;if(cKey){const i=s.toLowerCase().lastIndexOf(cKey);address=s.slice(0,i).replace(/[,\s]+$/,"").trim()||s}
+  return{address:address||s,city,zip,bs,price,open,close,must};
+}
+function addParsed(items,replace){
+  const ls=items.filter(Boolean).map(mk);
+  if(replace||state.source==="example"){state.listings=ls;state.fileName=""}else state.listings=state.listings.concat(ls);
+  state.source=state.source==="example"||replace?"paste":state.source;render();autoPin();
+}
+
+// ---------- Claude-powered helpers ----------
+let sampleFn=null,canImages=false,pinning=false;
+async function initSample(){
+  try{const st=await fetch("/api/status").then(r=>r.json());if(!st.claude)return;
+    sampleFn={limits:async()=>({images:{maxCount:5}}),json:async(prompt,opts)=>{
+      const images=[];for(const f of (opts&&opts.images)?Array.from(opts.images):[]){images.push({media_type:"image/jpeg",data:await blobToB64(f)})}
+      const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,images})});
+      if(r.status===401){location.href="/login";return[]}const j=await r.json().catch(()=>({}));if(!r.ok)throw{code:j.code||"upstream_error",message:j.error||r.statusText};return j.result}};
+    canImages=true;$("photoBtn").hidden=false;$("pasteClaude").hidden=false;render()}catch(e){sampleFn=null}
+}
+// Shrink photos to ~1600px JPEG before upload (Vercel limits a request to 4.5 MB).
+async function blobToB64(b){try{const bmp=await createImageBitmap(b);const k=Math.min(1,1600/Math.max(bmp.width,bmp.height));const c=document.createElement("canvas");c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);return c.toDataURL("image/jpeg",0.82).split(",")[1]}
+  catch(e){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(b)})}}
+async function geocodeMany(addresses){const r=await fetch("/api/geocode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({addresses})});
+  if(r.status===401){location.href="/login";return[]}const j=await r.json().catch(()=>({}));if(!r.ok)throw{code:"upstream_error",message:j.error||r.statusText};return j.results}
+function sampleErr(e){const c=e&&e.code;return c==="not_granted"||c==="sampling_disabled"?"Claude isn't allowed for this page.":c==="rate_limited"?"Claude is busy or you've hit a usage limit. Try again in a bit.":c==="invalid_json"?"Claude's answer couldn't be read. Try again.":c==="cancelled"?"Stopped.":"Couldn't reach the server. Try again."}
+const ROW_SHAPE='{"address":"street number and name (with unit)","city":"","zip":"","price":number|null,"open":"h:mm am/pm"|null,"close":"h:mm am/pm"|null,"agent":""|null,"bs":number|null}';
+function rowsFromClaude(arr){return(Array.isArray(arr)?arr:[]).filter(r=>r&&r.address).map(r=>({address:String(r.address),city:String(r.city||""),zip:String(r.zip||"").slice(0,5),price:money(r.price),agent:String(r.agent||""),bs:intOrNull(r.bs),open:parseClock(r.open,"open"),close:parseClock(r.close,"close")}))}
+// After you bring in listings, pin them right away so stops in the same ZIP aren't stacked on one point.
+function autoPin(){if(!pinning&&state.listings.some(l=>!l.skip&&!l.pinTried&&(l.locSrc==="zip"||l.lat==null)))pinLocations(true)}
+async function pinLocations(auto){
+  const btn=$("pinBtn");const todo=state.listings.filter(l=>!l.skip&&(auto!==true||!l.pinTried)&&(l.locSrc==="zip"||l.lat==null)).slice(0,60);if(!todo.length)return;todo.forEach(l=>l.pinTried=true);
+  if(pinning)return;pinning=true;if(btn){btn.disabled=true;btn.textContent="Pinning "+todo.length+"…"}setStatus("Pinning "+todo.length+" listings to street level…");
+  const list=todo.map((l,i)=>i+". "+fullAddr(l)).join("\n");
+  try{const res=await geocodeMany(todo.map(fullAddr));
+    let n=0;(Array.isArray(res)?res:[]).forEach(r=>{const l=todo[+r.i];if(!l||typeof r.lat!=="number"||typeof r.lng!=="number"||Math.abs(r.lat-37.9)>1.5||Math.abs(r.lng+122)>1.5)return;
+      // sanity check: a pin more than ~12 km from its own ZIP is almost certainly wrong, so keep the ZIP point
+      if(l.locSrc==="zip"&&km(l,{lat:r.lat,lng:r.lng})>(l.zipFromCity?25:12))return;
+      l.lat=r.lat;l.lng=r.lng;l.locSrc="claude";n++});
+    setStatus("Pinned "+n+" of "+todo.length+" listings. Spot-check the order on the map before you head out.");
+  }catch(e){setStatus(sampleErr(e))}
+  pinning=false;
+  if(START.src==="zip"||START.src==="none"||END.src==="zip"||END.src==="none")await pinEndpoints();
+  if(view!=="plan")render();else save();
+  if(view!=="plan")autoPin(); // another page may have been opened while this ran
+}
+async function readPhotos(files){
+  if(!sampleFn||!canImages||!files.length)return;
+  const lim=await sampleFn.limits().catch(()=>null);const max=(lim&&lim.images&&lim.images.maxCount)||5;
+  const batch=Array.from(files).slice(0,max);
+  setStatus("Reading "+batch.length+" photo"+(batch.length>1?"s":"")+" with Claude…");
+  try{const res=await sampleFn.json("These are photos or screenshots of real estate listings (flyers, MLS pages, broker tour sheets). Extract every listing you can see. Reply with only a JSON array of objects shaped "+ROW_SHAPE+". Use null for anything not shown. Do not invent addresses.",{images:batch,modelTier:"default"});
+    const rows=rowsFromClaude(res);if(!rows.length){setStatus("No addresses found in those photos.");return}
+    addParsed(rows.map(r=>r),false);setStatus("Added "+rows.length+" listing"+(rows.length>1?"s":"")+" from photos"+(files.length>max?" (first "+max+" photos only; add the rest in another batch)":"")+".");
+  }catch(e){setStatus(sampleErr(e))}
+}
+async function claudeParseText(){
+  const txt=$("pasteText").value.trim();if(!txt||!sampleFn)return;$("pasteStatus").textContent="Reading with Claude…";$("pasteClaude").disabled=true;
+  try{const res=await sampleFn.json("Extract the real estate listings from this text (a broker tour list, email, or notes). Reply with only a JSON array of objects shaped "+ROW_SHAPE+". Use null for missing fields. Do not invent addresses.\n\n"+txt.slice(0,20000),{modelTier:"quick"});
+    const rows=rowsFromClaude(res);if(!rows.length){$("pasteStatus").textContent="No addresses found.";return}
+    addParsed(rows,$("pasteReplace").checked);$("pasteDlg").close();setStatus("Added "+rows.length+" listings from pasted text.");
+  }catch(e){$("pasteStatus").textContent=sampleErr(e)}finally{$("pasteClaude").disabled=false}
+}
+
+// ---------- Plan Today's Tour: clean raw data, export, split by team ----------
+const TS=window.TourSheet;
+let plan={clean:null,team:null,greenMax:TS.RULES.greenMax};
+function titleCase(s){return String(s||"").toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())}
+function readBook(file,cb){
+  const rd=new FileReader();
+  rd.onload=()=>{try{const isCsv=/\.csv$/i.test(file.name)||/csv/.test(file.type);
+      cb(null,XLSX.read(new Uint8Array(rd.result),{type:"array",raw:isCsv,cellStyles:false,cellDates:false}))}catch(e){cb(e)}};
+  rd.onerror=()=>cb(rd.error||new Error("Couldn't read the file"));
+  rd.readAsArrayBuffer(file);
+}
+const firstAOA=wb=>XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null});
+function download(bytes,name){
+  const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+function uploadRaw(file){
+  $("cleanStatus").textContent="Reading "+file.name+"…";
+  readBook(file,(err,wb)=>{
+    if(err){$("cleanStatus").textContent="Couldn't read "+file.name+". Save it as .csv or .xlsx and try again.";return}
+    const res=TS.processRaw(firstAOA(wb),{greenMax:plan.greenMax});
+    if(res.error){$("cleanStatus").textContent=res.error;return}
+    plan.clean={rows:res.rows,date:res.date,fileName:file.name,stats:res.stats};
+    $("cleanStatus").textContent=res.missing.length?"Heads up: no "+res.missing.join(", ")+" column found in "+file.name+".":"";
+    renderPlan();save();
+  });
+}
+function recolor(rows){(rows||[]).forEach(r=>{r[TS.C.color]=TS.colorFor(r[TS.C.price],Object.assign({},TS.RULES,{greenMax:plan.greenMax}))})}
+function cellText(v,i){
+  const C=TS.C;
+  if(i===C.visited||i===C.call)return'<span class="box" aria-label="'+(v?"checked":"unchecked")+'"></span>';
+  if(v==null||v==="")return"";
+  if(i===C.price&&typeof v==="number")return"$"+v.toLocaleString("en-US");
+  if(i===C.date&&typeof v==="number"){const d=new Date(Date.UTC(1899,11,30)+v*864e5);return(d.getUTCMonth()+1)+"/"+d.getUTCDate()+"/"+String(d.getUTCFullYear()).slice(2)}
+  if((i===C.start||i===C.end)&&typeof v==="number")return hm(Math.round(v*1440));
+  return esc(v);
+}
+function renderPlan(){
+  const c=plan.clean,R=TS.RULES,st=c&&c.stats;
+  const chip=(label,n)=>'<span class="rule">'+label+(n!=null?' <b>'+n+'</b>':'')+'</span>';
+  $("ruleList").innerHTML=
+    chip("Duplicate addresses removed",st?st.duplicates.length:null)+
+    chip("Starts 8:00–8:30 AM removed",st?st.earlyStart.length:null)+
+    chip("Ends 4:00–11:59 PM removed",st?st.lateEnd.length:null)+
+    chip("ZIP 94595 removed",st?st.zip.length:null)+
+    '<span class="rule yellow">Yellow · $0 – $'+R.yellowMax.toLocaleString("en-US")+'</span>'+
+    '<label class="rule" for="greenMax">Green up to $ <input id="greenMax" inputmode="numeric" value="'+plan.greenMax.toLocaleString("en-US")+'"></label>'+
+    '<span class="rule">White above</span>';
+  $("greenMax").onchange=e=>{const v=money(e.target.value);if(v&&v>R.yellowMax){plan.greenMax=v;if(plan.clean)recolor(plan.clean.rows)}renderPlan();save()};
+  const body=$("cleanBody");
+  $("cleanEmpty").hidden=!!(c&&c.rows.length);$("cleanWrap").hidden=!(c&&c.rows.length);
+  if(c&&!c.rows.length)$("cleanEmpty").textContent="No listings left after cleaning "+c.fileName+".";
+  if(c)body.innerHTML=c.rows.map(r=>'<tr class="'+(r[TS.C.color]==="yellow"?"y":"")+'">'+r.map((v,i)=>'<td class="'+([TS.C.price,TS.C.dom,TS.C.mls,TS.C.date].includes(i)?"mono":"")+'">'+cellText(v,i)+'</td>').join("")+'</tr>').join("");
+  $("cleanMeta").textContent=c?c.rows.length+" listings · "+c.rows.filter(r=>r[TS.C.color]==="yellow").length+" yellow · from "+c.fileName+(st?" ("+st.read+" rows read)":""):"";
+  $("exportClean").disabled=!(c&&c.rows.length);
+  $("exportClean").textContent=c?"⤓ Export "+TS.baseName(c.date)+".xlsx":"⤓ Export tour sheet";
+  $("teamUseClean").disabled=!(c&&c.rows.length);
+  const removed=st?[["Duplicates",st.duplicates],["Starts 8:00–8:30 AM",st.earlyStart],["Ends 4 PM or later",st.lateEnd],["ZIP 94595",st.zip]].filter(x=>x[1].length):[];
+  const total=removed.reduce((a,x)=>a+x[1].length,0);
+  $("removedWrap").hidden=!total;
+  $("removedSum").textContent="See the "+total+" removed row"+(total===1?"":"s");
+  $("removedList").innerHTML=removed.map(([h,list])=>list.map(t=>'<li><b>'+esc(h)+':</b> '+esc(t)+'</li>').join("")).join("");
+  renderTeams();
+}
+function renderTeams(){
+  const t=plan.team,sp=t&&t.split;
+  const counts=k=>sp?sp.sheets[k].length:null;
+  const citiesIn=new Set(t?t.rows.map(r=>String(r[TS.C.city]||"").toLowerCase().trim()):[]);
+  const cityChips=list=>'<div class="citylist">'+list.map(c=>'<span class="chip'+(citiesIn.has(c.toLowerCase())?" has":"")+'">'+esc(c)+'</span>').join("")+'</div>';
+  let h=TS.TEAMS.map(tm=>{const n=counts(tm.key);const off=sp&&!n;
+    return'<div class="team'+(off?" off":"")+'"><h3>'+esc(tm.name)+'\'s sheet <span class="n">'+(n==null?"–":n)+'<small>'+(n==null?"":n===1?"stop":"stops")+'</small></span></h3>'+cityChips(tm.cities)+
+      '<div class="sub">'+(n==null?"Waiting for a tour sheet.":off?"No listings in these cities today. No sheet is made.":"Loaded on "+esc(tm.name)+"'s Route.")+'</div>'+
+      (n?'<a class="btn" href="#'+tm.key+'">Open '+esc(tm.name)+'\'s Route →</a>':'')+'</div>'}).join("");
+  h+='<div class="team shared"><h3>All sheets <span class="n">'+(sp?sp.shared:"–")+'</span></h3>'+cityChips(TS.SHARED_CITIES)+'<div class="sub">These cities go on every person\'s sheet.</div></div>';
+  $("teams").innerHTML=h;
+  $("exportTeam").disabled=!(sp&&TS.TEAMS.some(tm=>sp.sheets[tm.key].length));
+  let msg=t?"Split "+t.rows.length+" listings from "+t.fileName+"."+(t.recolored?" "+t.recolored+" yellow row"+(t.recolored>1?"s":"")+" with HomeRun Eligible \"Yes, Income Limit of $127,840\" changed to white.":""):"Import the cleaned tour sheet (or use today's sheet above). Each person's route page fills in automatically.";
+  if(sp&&sp.unassigned.length){const cs=[...new Set(sp.unassigned.map(r=>titleCase(r[TS.C.city])||"No city"))];msg+=" "+sp.unassigned.length+" listing"+(sp.unassigned.length>1?"s are":" is")+" in a city not on any list ("+cs.join(", ")+") and "+(sp.unassigned.length>1?"were":"was")+" left out."}
+  $("teamStatus").textContent=msg;
+}
+function rowToListing(r){const C=TS.C;let open=parseClock(r[C.start],"open"),close=parseClock(r[C.end],"close");if(open!=null&&close!=null&&close<=open)close+=720;
+  return mk({address:String(r[C.address]).trim(),city:titleCase(r[C.city]),price:money(r[C.price]),bs:intOrNull(r[C.bs]),ls:intOrNull(r[C.ls]),agent:String(r[C.agent]||"").trim(),open,close,hrFile:String(r[C.color]||"").toLowerCase()==="yellow"})}
+function applySplit(rows,date,fileName,recolored){
+  const split=TS.splitByTeam(rows);
+  plan.team={rows,date,fileName,split,recolored:recolored||0};
+  snapshot();
+  TS.TEAMS.forEach(tm=>{const p=profiles[tm.key];p.listings=split.sheets[tm.key].map(rowToListing);p.source="team";p.fileName=fileName});
+  loadProfile(current);
+  renderPlan();save();
+}
+function importTeam(file){
+  $("teamStatus").textContent="Reading "+file.name+"…";
+  readBook(file,(err,wb)=>{
+    if(err){$("teamStatus").textContent="Couldn't read "+file.name+". Save it as .xlsx and try again.";return}
+    const aoa=firstAOA(wb);
+    let got=TS.fromTeamLayout(aoa);
+    if(!got){const raw=TS.processRaw(aoa,{greenMax:plan.greenMax});if(raw.error){$("teamStatus").textContent="This file doesn't look like the tour sheet or the MLS export. It needs Address and City columns.";return}got=raw}
+    applySplit(got.rows,got.date,file.name,got.recolored);
+  });
+}
+$("rawBtn").onclick=()=>$("rawIn").click();
+$("rawIn").onchange=e=>{const f=e.target.files[0];if(f)uploadRaw(f);e.target.value=""};
+$("exportClean").onclick=()=>{if(plan.clean)download(TS.buildXlsx([{name:"Sheet1",rows:plan.clean.rows}]),TS.baseName(plan.clean.date)+".xlsx")};
+$("teamImport").onclick=()=>$("teamIn").click();
+$("teamIn").onchange=e=>{const f=e.target.files[0];if(f)importTeam(f);e.target.value=""};
+$("teamUseClean").onclick=()=>{if(plan.clean)applySplit(plan.clean.rows,plan.clean.date,TS.baseName(plan.clean.date)+".xlsx")};
+$("exportTeam").onclick=()=>{const t=plan.team;if(!t)return;const sheets=TS.TEAMS.filter(tm=>t.split.sheets[tm.key].length).map(tm=>({name:tm.name,rows:t.split.sheets[tm.key]}));
+  if(sheets.length)download(TS.buildXlsx(sheets),TS.baseName(t.date)+"_By_Team.xlsx")};
+
+// ---------- pages ----------
+function showView(v){
+  if(v!=="plan"&&!PEOPLE[v])v="plan";
+  if(v!=="plan"&&v!==current){snapshot();loadProfile(v)}
+  view=v;$("planView").hidden=v!=="plan";$("routeView").hidden=v==="plan";
+  document.querySelectorAll(".tab").forEach(a=>{const on=a.dataset.view===v;a.classList.toggle("on",on);if(on)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  document.title=(v==="plan"?"Plan Today's Tour":PEOPLE[v].name+"'s Route")+" · Broker Tour Router";
+  if(v==="plan"){renderPlan();save()}
+  else{$("routeTitle").textContent=PEOPLE[v].name+"'s Route";$("routeH").textContent=PEOPLE[v].name+"'s stops";fillPlaceList();showEndpoints();render();autoPin()}
+}
+window.addEventListener("hashchange",()=>showView(location.hash.slice(1)));
+
+// ---------- start / end ----------
+function allPlaces(){return PRESETS.concat(customPlaces)}
+function fillPlaceList(){$("placeList").innerHTML=allPlaces().map(p=>'<option value="'+esc(p.label)+'">'+esc(p.q!==p.label?p.q:"")+'</option>').join("")}
+function resolveEndpoint(which,text){
+  const prev=which==="start"?START:END;text=(text||"").trim();if(!text)return prev;
+  const hit=allPlaces().find(p=>p.label.toLowerCase()===text.toLowerCase()||p.q.toLowerCase()===text.toLowerCase());
+  if(hit)return{label:hit.label,q:hit.q,lat:hit.lat,lng:hit.lng,src:hit.src||"preset"};
+  const tmp={address:text,city:"",zip:""};locate(tmp);
+  let q=text;if(!/\bCA\b|california/i.test(q))q+=", CA";
+  if(tmp.lat!=null)return{label:text,q,lat:tmp.lat,lng:tmp.lng,src:"zip"};
+  return{label:text,q,lat:null,lng:null,src:"none"};
+}
+function noteFor(p){return p.src==="preset"||p.src==="saved"?["Saved place · exact location",""]:p.src==="claude"?["Pinned",""]:p.src==="zip"?["≈ Placed by ZIP / city","" ]:["Not placed yet. Add a city or ZIP.","bad"]}
+function showEndpoints(){[["start",START],["end",END]].forEach(([w,p])=>{const el=$(w+"Note");const [t,c]=noteFor(p);el.textContent=t;el.className="locnote "+c;if(document.activeElement!==$(w+"Loc"))$(w+"Loc").value=p.label})}
+function setEndpoint(which,text){const r=resolveEndpoint(which,text);if(which==="start")START=r;else END=r;showEndpoints();render()}
+async function pinEndpoints(){
+  const todo=[["start",START],["end",END]].filter(([w,p])=>p.src==="zip"||p.src==="none");if(!todo.length)return;
+  document.querySelectorAll(".pinEnd").forEach(b=>{b.disabled=true;b.textContent="Pinning…"});
+  try{const res=await geocodeMany(todo.map(([w,p])=>p.label));
+    (Array.isArray(res)?res:[]).forEach(r=>{const t=todo[+r.i];if(!t||typeof r.lat!=="number"||typeof r.lng!=="number")return;
+      const p=t[1];p.lat=r.lat;p.lng=r.lng;p.src="claude";if(r.address&&typeof r.address==="string")p.q=r.address;
+      customPlaces=customPlaces.filter(c=>c.label.toLowerCase()!==p.label.toLowerCase());customPlaces.unshift({label:p.label,q:p.q,lat:p.lat,lng:p.lng,src:"saved"});customPlaces=customPlaces.slice(0,12)});
+    fillPlaceList();
+  }catch(e){setStatus(sampleErr(e))}
+  showEndpoints();render();
+}
+
+// ---------- events ----------
+// Apply what's in the box as you type, and again when you leave it (then pin it precisely).
+function commitEndpoint(w){const el=$(w+"Loc");const cur=w==="start"?START:END;
+  if(el.value.trim()&&el.value.trim()!==cur.label)setEndpoint(w,el.value);
+  const p=w==="start"?START:END;if((p.src==="zip"||p.src==="none"))pinEndpoints()}
+const typeTimers={};
+["start","end"].forEach(w=>{const el=$(w+"Loc");
+  el.addEventListener("input",()=>{clearTimeout(typeTimers[w]);typeTimers[w]=setTimeout(()=>{if(el.value.trim())setEndpoint(w,el.value)},500)});
+  el.addEventListener("change",()=>{clearTimeout(typeTimers[w]);commitEndpoint(w)});
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();el.blur()}})});
+// Make sure the Maps buttons always use exactly what's in the Start / End boxes right now.
+["gmaps","amaps"].forEach(id=>$(id).addEventListener("pointerdown",()=>{["start","end"].forEach(w=>{clearTimeout(typeTimers[w]);const el=$(w+"Loc"),cur=w==="start"?START:END;if(el.value.trim()&&el.value.trim()!==cur.label)setEndpoint(w,el.value)})}));
+$("copyStops").onclick=()=>{const b=$("copyStops");const done=t=>{b.textContent=t;setTimeout(()=>b.textContent="Copy stop list",1800)};
+  const fallback=()=>{const ta=$("stopCopyBox");ta.value=stopText;ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}done(ok?"Copied":"Select and copy below");if(!ok){ta.style.cssText="width:100%;min-height:120px;position:static";ta.removeAttribute("aria-hidden")}};
+  try{navigator.clipboard.writeText(stopText).then(()=>done("Copied"),fallback)}catch(e){fallback()}};
+$("swapBtn").onclick=()=>{const t=START;START=END;END=t;showEndpoints();render()};
+document.addEventListener("click",e=>{if(e.target.closest(".pinEnd"))pinEndpoints()});
+$("importBtn").onclick=()=>$("fileIn").click();
+$("fileIn").onchange=e=>{const f=e.target.files[0];if(f)importFile(f);e.target.value=""};
+$("photoBtn").onclick=()=>$("photoIn").click();
+$("photoIn").onchange=e=>{readPhotos(e.target.files);e.target.value=""};
+$("pasteBtn").onclick=()=>{$("pasteStatus").textContent="";$("pasteDlg").showModal()};
+$("pasteCancel").onclick=()=>$("pasteDlg").close();
+$("pasteAdd").onclick=()=>{const items=$("pasteText").value.split(/\n+/).map(parseLine).filter(Boolean);if(!items.length){$("pasteStatus").textContent="Add at least one address.";return}addParsed(items,$("pasteReplace").checked);$("pasteDlg").close();$("pasteText").value="";setStatus("Added "+items.length+" listings.")};
+$("pasteClaude").onclick=claudeParseText;
+document.addEventListener("click",e=>{const a=e.target.closest("[data-act=import]");if(a)$("fileIn").click();if(e.target.id==="pinBtn")pinLocations()});
+$("sheet").addEventListener("click",e=>{const b=e.target.closest("[data-tog]");if(!b)return;const id=+b.closest("tr").dataset.id;const l=state.listings.find(x=>x.id===id);if(!l)return;
+  const k=b.dataset.tog;if(k==="hr"){l.hrManual=!l.homerun;applyHomerun(l)}else if(k==="must"){l.must=!l.must;if(l.must)l.skip=false}else if(k==="skip"){l.skip=!l.skip;if(l.skip)l.must=false}render()});
+let bsTimer;$("sheet").addEventListener("input",e=>{if(!e.target.classList.contains("bs"))return;const id=+e.target.closest("tr").dataset.id;const l=state.listings.find(x=>x.id===id);if(!l)return;l.bs=intOrNull(e.target.value);clearTimeout(bsTimer);bsTimer=setTimeout(render,600)});
+["startTime","endTime","stopCount","dwell","valueW"].forEach(id=>$(id).addEventListener("change",render));
+// drag & drop a file anywhere
+document.addEventListener("dragover",e=>{e.preventDefault()});
+document.addEventListener("drop",e=>{e.preventDefault();const fs=[...(e.dataTransfer&&e.dataTransfer.files||[])];const sheet=fs.find(f=>/\.(xlsx?|csv)$/i.test(f.name));if(sheet){if(view==="plan")uploadRaw(sheet);else importFile(sheet)}else{const imgs=fs.filter(f=>/^image\//.test(f.type));if(imgs.length)readPhotos(imgs)}});
+
+restore();
+fillPlaceList();showView(location.hash.slice(1)||view);initSample();
+// Signed-in employee + sign out
+fetch("/api/me").then(r=>r.ok?r.json():null).then(me=>{if(me&&me.email){$("whoEmail").textContent=me.email;$("who").hidden=false}}).catch(()=>{});
+$("signOut").onclick=async()=>{try{await fetch("/api/logout",{method:"POST"})}catch(e){}location.href="/login"};
+})();
+</script>
+
+</body>
+</html>
