@@ -11,8 +11,11 @@ before anything is served (`middleware.js`), so the page itself is never sent to
 
 1. **Upload Raw Data** — the MLS "Tour/Open House" export (.csv or .xlsx). The app:
    - removes duplicate addresses (keeps the first),
-   - removes tours starting 8:00–8:30 AM and tours ending 4:00–11:59 PM,
+   - removes tours starting 8:00–8:30 AM and tours ending 4:00–11:59 PM. **Both windows are editable** on the
+     page (Remove starts / Remove ends); changing them re-cleans the uploaded file right away, and clearing both
+     boxes of a window turns that filter off. Your times are saved in that browser,
    - removes ZIP 94595,
+   - removes addresses with no house number (lots), e.g. "Skyline Blvd", "Lot 5 Oak Rd" or "0 Wildcat Canyon Rd",
    - writes the 19-column Monday Broker Tour layout (Visited and Call as checkboxes, Agent and Phone split
      from the MLS agent field),
    - sets Color: yellow for $0–$840,000 (whole row filled yellow, same rule as the reference file), green up to
@@ -25,13 +28,21 @@ before anything is served (`middleware.js`), so the page itself is never sent to
    - All sheets: Castro Valley, Hayward, San Lorenzo, Pleasanton, Livermore
    A person with no listings gets no sheet. Cities on no list are named on screen and left out.
    **Export team workbook** downloads `..._By_Team.xlsx`, and each person's route page fills in automatically.
-   To change the city lists, edit `TEAMS` and `SHARED_CITIES` in `public/tour-sheet.js`.
+   **Change the city lists right on the page:** type a city in a person's **Add a city** box, or click × on a city
+   to remove it. Adding a city that's on someone else's list moves it. Today's listings re-sort right away and
+   each route page updates. Lists are saved in that browser; **Reset all city lists to the defaults** undoes it.
+   (The defaults above live in `TEAMS` and `SHARED_CITIES` in `public/tour-sheet.js`.)
 
 ## Route pages
 
 Heejin's, Aaron's and Andrei's Route each keep their own stops, start/end, times and settings (saved in that
 browser). Defaults: Heejin Alamo → San Ramon; Aaron El Sobrante 94803 → Broadway Plaza; Andrei Pleasant Hill
 Senior Center → Broadway Plaza. Importing a team workbook on a route page uses that person's sheet.
+
+**Custom Route** gets every listing from today's sheet, from all cities (including cities on no one's list).
+Tick or untick cities under **Cities on this route** (or Select all / Clear all) to choose what gets routed. It
+has its own start and end (default Pleasant Hill Senior Center → Broadway Plaza), Maps buttons and stop list.
+It fills in when you Upload Raw Data or split by team, and your city choices carry over to the next sheet.
 
 ## 1. Deploy
 

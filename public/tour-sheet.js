@@ -30,6 +30,15 @@
     { key: "andrei", name: "Andrei", cities: ["Concord", "Pleasant Hill", "Clayton", "Martinez", "Antioch", "Bay Point"] },
   ];
   const SHARED_CITIES = ["Castro Valley", "Hayward", "San Lorenzo", "Pleasanton", "Livermore"]; // go on every sheet
+  // The lists above are the defaults; the page can replace them with each person's own choices.
+  const DEFAULT_CITIES = Object.fromEntries(TEAMS.map(t => [t.key, t.cities.slice()]).concat([["shared", SHARED_CITIES.slice()]]));
+  function getTeamCities() { return Object.fromEntries(TEAMS.map(t => [t.key, t.cities.slice()]).concat([["shared", SHARED_CITIES.slice()]])); }
+  function setTeamCities(cfg) {
+    if (!cfg) return;
+    const clean = a => (Array.isArray(a) ? a : []).map(x => String(x).trim()).filter(Boolean);
+    TEAMS.forEach(t => { if (cfg[t.key]) t.cities.splice(0, t.cities.length, ...clean(cfg[t.key])); });
+    if (cfg.shared) SHARED_CITIES.splice(0, SHARED_CITIES.length, ...clean(cfg.shared));
+  }
 
   // ---------- helpers ----------
   const normCity = s => String(s == null ? "" : s).toLowerCase().replace(/[^a-z ]/g, " ").replace(/\s+/g, " ").trim();
@@ -126,7 +135,7 @@
     const need = ["address", "city", "start", "end", "price"];
     const missing = need.filter(k => cm[k] == null);
     if (missing.includes("address") || missing.includes("city")) return { error: "Couldn't find the Address and City columns." };
-    const stats = { read: 0, duplicates: [], earlyStart: [], lateEnd: [], zip: [], blank: 0 };
+    const stats = { read: 0, duplicates: [], earlyStart: [], lateEnd: [], zip: [], noNumber: [], blank: 0 };
     const seen = new Set(), rows = [];
     let firstDate = null;
     for (let r = hi + 1; r < aoa.length; r++) {
@@ -138,9 +147,11 @@
       const label = address + (g("city") ? ", " + String(g("city")).trim() : "");
       const zip = String(g("zip") == null ? "" : g("zip")).trim().slice(0, 5);
       if (rules.dropZips.includes(zip)) { stats.zip.push(label); continue; }
+      // a lot, not a house: the address doesn't start with a street number (or the number is 0)
+      if (!/^\s*\d/.test(address) || /^\s*0+(?=[\s-]|$)/.test(address)) { stats.noNumber.push(label); continue; }
       const st = minutes(g("start")), en = minutes(g("end"));
-      if (st != null && st >= rules.dropStartFrom && st <= rules.dropStartTo) { stats.earlyStart.push(label + " (starts " + String(g("start")).trim() + ")"); continue; }
-      if (en != null && en >= rules.dropEndFrom && en <= rules.dropEndTo) { stats.lateEnd.push(label + " (ends " + String(g("end")).trim() + ")"); continue; }
+      if (st != null && rules.dropStartFrom != null && rules.dropStartTo != null && st >= rules.dropStartFrom && st <= rules.dropStartTo) { stats.earlyStart.push(label + " (starts " + String(g("start")).trim() + ")"); continue; }
+      if (en != null && rules.dropEndFrom != null && rules.dropEndTo != null && en >= rules.dropEndFrom && en <= rules.dropEndTo) { stats.lateEnd.push(label + " (ends " + String(g("end")).trim() + ")"); continue; }
       const key = normAddr(address) + "|" + normCity(g("city"));
       if (seen.has(key)) { stats.duplicates.push(label); continue; }
       seen.add(key);
@@ -330,6 +341,6 @@
     return days[day] + "_Broker_Tour_" + p(mm) + "." + p(dd) + "." + p(yy);
   }
 
-  const api = { HEAD, C, RULES, TEAMS, SHARED_CITIES, processRaw, fromTeamLayout, splitByTeam, teamFor, buildXlsx, baseName, colorFor, minutes, splitAgent, excelDate };
+  const api = { HEAD, C, RULES, TEAMS, SHARED_CITIES, DEFAULT_CITIES, getTeamCities, setTeamCities, processRaw, fromTeamLayout, splitByTeam, teamFor, buildXlsx, baseName, colorFor, minutes, splitAgent, excelDate };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.TourSheet = api;
 })(typeof globalThis !== "undefined" ? globalThis : self);

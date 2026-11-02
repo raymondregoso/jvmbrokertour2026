@@ -70,6 +70,7 @@ h2{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08e
 .rule{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--bg);display:inline-flex;gap:6px;align-items:center;color:var(--ink)}
 .rule b{font-family:var(--mono);font-weight:600}
 .rule.yellow{background:var(--xl-yellow);border-color:var(--xl-yellow-line);color:var(--xl-yellow-ink)}
+.rule input[type=time]{width:auto;font-family:var(--mono)}
 .rule input{font:inherit;font-family:var(--mono);width:92px;border:1px solid var(--line);border-radius:5px;padding:1px 5px;background:var(--surface);color:var(--ink)}
 table.xl{min-width:1480px;font-size:12px}
 table.xl td,table.xl th{white-space:nowrap;padding:5px 8px}
@@ -86,6 +87,12 @@ table.xl td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 #stopList .meta{color:var(--ink)}
 #stopList .hrtag{background:var(--xl-yellow);color:var(--xl-yellow-ink);border-radius:4px;padding:0 5px;font-weight:600;font-size:12px}
 #stopList a.g{font-weight:600;font-size:12px;color:var(--muted);margin-left:4px}
+.citypick{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.citypick label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;min-width:0}
+.citypick label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.citypick input{width:16px;height:16px;accent-color:var(--accent);flex:none;margin:0}
+.citypick .cname{flex:1;min-width:0;overflow-wrap:anywhere}
+.citypick b{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--muted)}
 .plan-empty{border:1px dashed var(--line);border-radius:8px;padding:22px 16px;color:var(--muted);text-align:center}
 table.xl tr.y td{background:var(--xl-yellow);color:var(--xl-yellow-ink)}
 table.xl .box{display:inline-block;width:12px;height:12px;border:1.5px solid currentColor;border-radius:2px;opacity:.6;vertical-align:middle}
@@ -99,6 +106,13 @@ table.xl .box{display:inline-block;width:12px;height:12px;border:1.5px solid cur
 .team .sub{font-size:12px}
 .citylist{display:flex;flex-wrap:wrap;gap:4px}
 .citylist .chip.has{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.citylist .chip.city{display:inline-flex;align-items:center;gap:1px;padding-right:2px}
+.citylist .chip .x{border:0;background:none;padding:0 4px;margin:0;font:600 13px/1 var(--body);color:var(--muted);cursor:pointer;border-radius:999px}
+.citylist .chip .x:hover{color:var(--bad)}
+.addcity{display:flex;gap:6px}
+.addcity input{flex:1;min-width:0;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--surface);color:var(--ink)}
+.addcity button{padding:5px 10px;font-size:12px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline}
 .team a.btn{align-self:flex-start;font-size:13px;padding:6px 10px}
 details.removed summary{cursor:pointer;color:var(--muted);font-size:13px}
 details.removed ul{margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--muted);columns:2 280px}
@@ -210,6 +224,7 @@ dialog textarea{width:100%;min-height:200px;font:inherit;font-family:var(--mono)
   <a class="tab" href="#heejin" data-view="heejin">Heejin's Route <span class="count" id="cnt-heejin"></span></a>
   <a class="tab" href="#aaron" data-view="aaron">Aaron's Route <span class="count" id="cnt-aaron"></span></a>
   <a class="tab" href="#andrei" data-view="andrei">Andrei's Route <span class="count" id="cnt-andrei"></span></a>
+  <a class="tab" href="#custom" data-view="custom">Custom Route <span class="count" id="cnt-custom"></span></a>
 </div></nav>
 
 <div class="wrap">
@@ -272,6 +287,15 @@ dialog textarea{width:100%;min-height:200px;font:inherit;font-family:var(--mono)
     </div>
     <datalist id="placeList"></datalist>
   </div>
+
+  <section class="panel" id="cityPick" aria-labelledby="cityPickH" hidden>
+    <div class="panel-head">
+      <h2 id="cityPickH">Cities on this route</h2>
+      <div class="actions"><button type="button" id="cityAll">Select all</button><button type="button" id="cityNone">Clear all</button></div>
+    </div>
+    <div class="citypick" id="cityPickList"></div>
+    <div class="status" id="cityPickNote"></div>
+  </section>
 
   <div class="bar">
     <input type="file" id="fileIn" accept=".xls,.xlsx,.csv,text/csv" hidden>
@@ -346,7 +370,9 @@ const PRESETS=[
 const PEOPLE={
   heejin:{name:"Heejin",start:"Alamo, CA",end:"San Ramon, CA"},
   aaron:{name:"Aaron",start:"El Sobrante, CA 94803",end:"Broadway Plaza, Walnut Creek"},
-  andrei:{name:"Andrei",start:"Pleasant Hill Senior Center",end:"Broadway Plaza, Walnut Creek"}};
+  andrei:{name:"Andrei",start:"Pleasant Hill Senior Center",end:"Broadway Plaza, Walnut Creek"},
+  custom:{name:"Custom",title:"Custom Route",start:"Pleasant Hill Senior Center",end:"Broadway Plaza, Walnut Creek"}};
+const routeTitle=k=>PEOPLE[k].title||PEOPLE[k].name+"'s Route";
 let START={label:PRESETS[0].label,q:PRESETS[0].q,lat:PRESETS[0].lat,lng:PRESETS[0].lng,src:"preset"};
 let END={label:PRESETS[1].label,q:PRESETS[1].q,lat:PRESETS[1].lat,lng:PRESETS[1].lng,src:"preset"};
 let customPlaces=[]; // endpoints the user typed and pinned, remembered on this device
@@ -534,7 +560,7 @@ function render(){
   const inRoute=new Set(route.map(r=>r.id));
   // notices
   const n=[];
-  if(!state.listings.length)n.push('<div class="notice info"><p><b>No stops yet for '+esc(PEOPLE[current].name)+'.</b> Split today\'s tour sheet on Plan Today\'s Tour and this page fills in, or import a file here.</p><a class="btn" href="#plan">Go to Plan Today\'s Tour</a></div>');
+  if(!state.listings.length)n.push('<div class="notice info"><p><b>No stops yet for '+esc(current==="custom"?"the Custom Route":PEOPLE[current].name)+'.</b> '+(current==="custom"?'Upload Raw Data or split today\'s sheet on Plan Today\'s Tour, and every city shows up here to pick from.':'Split today\'s tour sheet on Plan Today\'s Tour and this page fills in, or import a file here.')+'</p><a class="btn" href="#plan">Go to Plan Today\'s Tour</a></div>');
   if(state.source==="example")n.push('<div class="notice info"><p><span class="example-tag">Example tour</span> These 14 listings are sample data so you can see how routing works. Import your tour sheet to replace them.</p><button type="button" data-act="import">Import .xls / .csv</button></div>');
   const approx=state.listings.filter(l=>!l.skip&&(l.locSrc==="zip"||l.lat==null));
   if(approx.length&&state.source!=="example")n.push('<div class="notice warn"><p><b>'+approx.length+' listing'+(approx.length>1?"s are":" is")+' placed by ZIP only.</b> Listings in the same ZIP sit on one point, so the order inside a town can zigzag. Pin them before you drive.</p><button type="button" class="primary" id="pinBtn" '+(!pinning?"":"disabled")+'>'+(pinning?"Pinning…":"Pin exact locations")+'</button></div>');
@@ -583,7 +609,7 @@ function renderStopList(run){
   if(run.blocked||!route.length){wrap.hidden=true;stopText=stopHtml="";return}
   wrap.hidden=false;
   $("stopListH").textContent="Stop list · "+route.length+" stop"+(route.length>1?"s":"");
-  const who=PEOPLE[current]?PEOPLE[current].name+"'s route":"Route";
+  const who=PEOPLE[current]?routeTitle(current):"Route";
   const intro=who+": "+START.label+" → "+END.label+" · "+route.length+" stop"+(route.length>1?"s":"")+" in route order";
   const items=route.map(l=>{const name=(l.agent?l.agent+" – ":"")+l.address;return{name,url:appleLink(l,name),parts:stopParts(l),hr:l.homerun}});
   $("stopList").innerHTML=items.map(it=>'<li><a href="'+esc(it.url)+'" target="_blank" rel="noopener">'+esc(it.name)+'</a> <span class="meta">· '+it.parts.map(x=>x==="HomeRun"?'<span class="hrtag">HomeRun</span>':esc(x)).join(" · ")+'</span></li>').join("");
@@ -615,13 +641,15 @@ function defaultProfile(k){return{listings:[],source:"empty",fileName:"",start:p
 // copy what's on screen into the current person's saved route
 function snapshot(){const p=profiles[current];if(!p)return;p.listings=state.listings;p.source=state.source;p.fileName=state.fileName;p.start=START;p.end=END;
   p.s={t:$("startTime").value,te:$("endTime").value,k:$("stopCount").value,d:$("dwell").value,v:$("valueW").value}}
-function loadProfile(k){current=k;const p=profiles[k];state.listings=p.listings;state.source=p.source;state.fileName=p.fileName;START=p.start;END=p.end;
+const cityKey=l=>String(l.city||"").toLowerCase().trim();
+function customFiltered(p){const off=new Set(p.off||[]);return(p.all||[]).filter(l=>!off.has(cityKey(l)))}
+function loadProfile(k){current=k;const p=profiles[k];if(k==="custom")p.listings=customFiltered(p);state.listings=p.listings;state.source=p.source;state.fileName=p.fileName;START=p.start;END=p.end;
   const s=p.s||{};$("startTime").value=s.t||"09:30";$("endTime").value=s.te||"13:30";$("stopCount").value=s.k||8;$("dwell").value=s.d||10;$("valueW").value=s.v??1}
 function updateCounts(){for(const k in PEOPLE){const el=$("cnt-"+k);if(el){const n=(profiles[k]&&profiles[k].listings.filter(l=>!l.skip).length)||0;el.textContent=n?String(n):""}}}
 function save(){snapshot();try{localStorage.setItem("btr.v2",JSON.stringify({profiles,current,view,places:customPlaces,plan}))}catch(e){}updateCounts()}
 function restore(){
   let o=null;try{o=JSON.parse(localStorage.getItem("btr.v2")||"null")}catch(e){}
-  if(o&&o.profiles){profiles=o.profiles;if(Array.isArray(o.places))customPlaces=o.places;if(o.plan)plan=Object.assign(plan,o.plan);view=o.view||"plan";current=o.current||"aaron"}
+  if(o&&o.profiles){profiles=o.profiles;if(Array.isArray(o.places))customPlaces=o.places;if(o.plan)plan=Object.assign(plan,o.plan);if(plan.cities)TS.setTeamCities(plan.cities);view=o.view||"plan";current=o.current||"aaron"}
   else{ // the earlier single page used Andrei's start/end, so carry its stops over to Andrei's Route
     try{const v1=JSON.parse(localStorage.getItem("btr.v1")||"null");
       if(v1&&Array.isArray(v1.listings)){if(Array.isArray(v1.places))customPlaces=v1.places;
@@ -629,7 +657,8 @@ function restore(){
           if(v1.start&&typeof v1.start.lat==="number")a.start=v1.start;if(v1.end&&typeof v1.end.lat==="number")a.end=v1.end;profiles.andrei=a}}}catch(e){}}
   for(const k in PEOPLE)if(!profiles[k]||!Array.isArray(profiles[k].listings)||!profiles[k].start||!profiles[k].end)profiles[k]=defaultProfile(k);
   if(!PEOPLE[current])current="aaron";
-  uid=1+Math.max(0,...Object.values(profiles).flatMap(p=>p.listings.map(l=>l.id||0)));
+  if(!Array.isArray(profiles.custom.all))profiles.custom.all=profiles.custom.listings.slice();
+  uid=1+Math.max(0,...Object.values(profiles).flatMap(p=>p.listings.concat(p.all||[]).map(l=>l.id||0)));
   loadProfile(current);
 }
 
@@ -677,7 +706,7 @@ function importFile(file){
     // if no fills anywhere, don't treat "no fill" as "not eligible": fall back to rules
     if(!fillsSeen&&cm.hr==null&&cm.color==null)uniq.forEach(o=>o.hrFile=null);
     else if(cm.hr==null&&cm.color==null)uniq.forEach(o=>{if(o.hrFile==null)o.hrFile=false});
-    state.listings=uniq.map(mk);state.source="file";state.fileName=file.name;
+    state.listings=uniq.map(mk);state.source="file";state.fileName=file.name;syncCustomAll();
     const noHours=uniq.filter(o=>o.open==null).length;
     setStatus("Imported "+uniq.length+" listings from "+file.name+(wb.SheetNames.length>1?" ("+sheetName+" sheet)":"")+(out.length>uniq.length?" ("+(out.length-uniq.length)+" duplicates removed)":"")+". Homerun from "+(cm.hr!=null?"the "+rows[hi][cm.hr]+" column":cm.color!=null?"the Color column (yellow)":fillsSeen?"row highlights":"price ≤ $840K / Low–Moderate tract")+"."+(noHours?" "+noHours+" without hours.":""));
     render();autoPin();
@@ -702,8 +731,9 @@ function parseLine(line){
 }
 function addParsed(items,replace){
   const ls=items.filter(Boolean).map(mk);
-  if(replace||state.source==="example"){state.listings=ls;state.fileName=""}else state.listings=state.listings.concat(ls);
-  state.source=state.source==="example"||replace?"paste":state.source;render();autoPin();
+  const base=current==="custom"?(profiles.custom.all||[]):state.listings;
+  if(replace||state.source==="example"){state.listings=ls;state.fileName=""}else state.listings=base.concat(ls);
+  state.source=state.source==="example"||replace?"paste":state.source;syncCustomAll();render();autoPin();
 }
 
 // ---------- Claude-powered helpers ----------
@@ -762,7 +792,8 @@ async function claudeParseText(){
 
 // ---------- Plan Today's Tour: clean raw data, export, split by team ----------
 const TS=window.TourSheet;
-let plan={clean:null,team:null,greenMax:TS.RULES.greenMax};
+let plan={clean:null,team:null,greenMax:TS.RULES.greenMax,cities:null,raw:null,
+  times:{sf:"08:00",st:"08:30",ef:"16:00",et:"23:59"}}; // tours to remove: starting sf–st, ending ef–et (empty = off)
 function titleCase(s){return String(s||"").toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())}
 function readBook(file,cb){
   const rd=new FileReader();
@@ -777,15 +808,27 @@ function download(bytes,name){
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
 }
+const toMin=v=>{const m=/^(\d{1,2}):(\d{2})/.exec(v||"");return m?+m[1]*60+ +m[2]:null};
+const fmtT=v=>{const m=toMin(v);if(m==null)return"";let h=Math.floor(m/60),mi=m%60;const ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+String(mi).padStart(2,"0")+" "+ap};
+function rulesNow(){const t=plan.times;let sf=toMin(t.sf),st=toMin(t.st),ef=toMin(t.ef),et=toMin(t.et);
+  if(sf!=null&&st!=null&&sf>st)[sf,st]=[st,sf];if(ef!=null&&et!=null&&ef>et)[ef,et]=[et,ef];
+  return{greenMax:plan.greenMax,dropStartFrom:sf,dropStartTo:st,dropEndFrom:ef,dropEndTo:et}}
+const windowLabel=(a,b)=>a&&b?fmtT(a)+"–"+fmtT(b):"off";
+function runClean(){
+  const r=plan.raw;if(!r)return;
+  const res=TS.processRaw(r.aoa,rulesNow());
+  if(res.error){$("cleanStatus").textContent=res.error;return}
+  plan.clean={rows:res.rows,date:res.date,fileName:r.fileName,stats:res.stats};
+  loadCustom(res.rows,r.fileName);
+  $("cleanStatus").textContent=res.missing.length?"Heads up: no "+res.missing.join(", ")+" column found in "+r.fileName+".":"";
+  renderPlan();save();
+}
 function uploadRaw(file){
   $("cleanStatus").textContent="Reading "+file.name+"…";
   readBook(file,(err,wb)=>{
     if(err){$("cleanStatus").textContent="Couldn't read "+file.name+". Save it as .csv or .xlsx and try again.";return}
-    const res=TS.processRaw(firstAOA(wb),{greenMax:plan.greenMax});
-    if(res.error){$("cleanStatus").textContent=res.error;return}
-    plan.clean={rows:res.rows,date:res.date,fileName:file.name,stats:res.stats};
-    $("cleanStatus").textContent=res.missing.length?"Heads up: no "+res.missing.join(", ")+" column found in "+file.name+".":"";
-    renderPlan();save();
+    plan.raw={aoa:firstAOA(wb),fileName:file.name}; // kept so changing a rule re-cleans without uploading again
+    runClean();
   });
 }
 function recolor(rows){(rows||[]).forEach(r=>{r[TS.C.color]=TS.colorFor(r[TS.C.price],Object.assign({},TS.RULES,{greenMax:plan.greenMax}))})}
@@ -803,12 +846,15 @@ function renderPlan(){
   const chip=(label,n)=>'<span class="rule">'+label+(n!=null?' <b>'+n+'</b>':'')+'</span>';
   $("ruleList").innerHTML=
     chip("Duplicate addresses removed",st?st.duplicates.length:null)+
-    chip("Starts 8:00–8:30 AM removed",st?st.earlyStart.length:null)+
-    chip("Ends 4:00–11:59 PM removed",st?st.lateEnd.length:null)+
+    '<span class="rule"><label for="tSF">Remove starts</label> <input type="time" id="tSF" value="'+esc(plan.times.sf)+'"> <label for="tST">to</label> <input type="time" id="tST" value="'+esc(plan.times.st)+'">'+(st?' <b>'+st.earlyStart.length+'</b>':'')+'</span>'+
+    '<span class="rule"><label for="tEF">Remove ends</label> <input type="time" id="tEF" value="'+esc(plan.times.ef)+'"> <label for="tET">to</label> <input type="time" id="tET" value="'+esc(plan.times.et)+'">'+(st?' <b>'+st.lateEnd.length+'</b>':'')+'</span>'+
     chip("ZIP 94595 removed",st?st.zip.length:null)+
+    chip("Addresses with no house number (lots) removed",st&&st.noNumber?st.noNumber.length:null)+
     '<span class="rule yellow">Yellow · $0 – $'+R.yellowMax.toLocaleString("en-US")+'</span>'+
     '<label class="rule" for="greenMax">Green up to $ <input id="greenMax" inputmode="numeric" value="'+plan.greenMax.toLocaleString("en-US")+'"></label>'+
     '<span class="rule">White above</span>';
+  [["tSF","sf"],["tST","st"],["tEF","ef"],["tET","et"]].forEach(([id,k])=>{$(id).onchange=e=>{plan.times[k]=e.target.value;
+    if(plan.raw)runClean();else{if(plan.clean)$("cleanStatus").textContent="Upload the raw file again to apply the new times.";renderPlan();save()}}});
   $("greenMax").onchange=e=>{const v=money(e.target.value);if(v&&v>R.yellowMax){plan.greenMax=v;if(plan.clean)recolor(plan.clean.rows)}renderPlan();save()};
   const body=$("cleanBody");
   $("cleanEmpty").hidden=!!(c&&c.rows.length);$("cleanWrap").hidden=!(c&&c.rows.length);
@@ -818,7 +864,7 @@ function renderPlan(){
   $("exportClean").disabled=!(c&&c.rows.length);
   $("exportClean").textContent=c?"⤓ Export "+TS.baseName(c.date)+".xlsx":"⤓ Export tour sheet";
   $("teamUseClean").disabled=!(c&&c.rows.length);
-  const removed=st?[["Duplicates",st.duplicates],["Starts 8:00–8:30 AM",st.earlyStart],["Ends 4 PM or later",st.lateEnd],["ZIP 94595",st.zip]].filter(x=>x[1].length):[];
+  const removed=st?[["Duplicates",st.duplicates],["Starts "+windowLabel(plan.times.sf,plan.times.st),st.earlyStart],["Ends "+windowLabel(plan.times.ef,plan.times.et),st.lateEnd],["ZIP 94595",st.zip],["No house number (lot)",st.noNumber||[]]].filter(x=>x[1].length):[];
   const total=removed.reduce((a,x)=>a+x[1].length,0);
   $("removedWrap").hidden=!total;
   $("removedSum").textContent="See the "+total+" removed row"+(total===1?"":"s");
@@ -829,18 +875,44 @@ function renderTeams(){
   const t=plan.team,sp=t&&t.split;
   const counts=k=>sp?sp.sheets[k].length:null;
   const citiesIn=new Set(t?t.rows.map(r=>String(r[TS.C.city]||"").toLowerCase().trim()):[]);
-  const cityChips=list=>'<div class="citylist">'+list.map(c=>'<span class="chip'+(citiesIn.has(c.toLowerCase())?" has":"")+'">'+esc(c)+'</span>').join("")+'</div>';
+  const cityChips=(key,list,owner)=>'<div class="citylist">'+list.map(c=>'<span class="chip city'+(citiesIn.has(c.toLowerCase())?" has":"")+'">'+esc(c)+'<button type="button" class="x" data-rm="'+key+'" data-city="'+esc(c)+'" aria-label="Remove '+esc(c)+' from '+esc(owner)+'">×</button></span>').join("")+'</div>'+
+    '<form class="addcity" data-team="'+key+'"><input id="add-'+key+'" placeholder="Add a city" aria-label="Add a city to '+esc(owner)+'"><button type="submit">Add</button></form>';
   let h=TS.TEAMS.map(tm=>{const n=counts(tm.key);const off=sp&&!n;
-    return'<div class="team'+(off?" off":"")+'"><h3>'+esc(tm.name)+'\'s sheet <span class="n">'+(n==null?"–":n)+'<small>'+(n==null?"":n===1?"stop":"stops")+'</small></span></h3>'+cityChips(tm.cities)+
+    return'<div class="team'+(off?" off":"")+'"><h3>'+esc(tm.name)+'\'s sheet <span class="n">'+(n==null?"–":n)+'<small>'+(n==null?"":n===1?"stop":"stops")+'</small></span></h3>'+cityChips(tm.key,tm.cities,tm.name+"'s sheet")+
       '<div class="sub">'+(n==null?"Waiting for a tour sheet.":off?"No listings in these cities today. No sheet is made.":"Loaded on "+esc(tm.name)+"'s Route.")+'</div>'+
       (n?'<a class="btn" href="#'+tm.key+'">Open '+esc(tm.name)+'\'s Route →</a>':'')+'</div>'}).join("");
-  h+='<div class="team shared"><h3>All sheets <span class="n">'+(sp?sp.shared:"–")+'</span></h3>'+cityChips(TS.SHARED_CITIES)+'<div class="sub">These cities go on every person\'s sheet.</div></div>';
+  h+='<div class="team shared"><h3>All sheets <span class="n">'+(sp?sp.shared:"–")+'</span></h3>'+cityChips("shared",TS.SHARED_CITIES,"all sheets")+'<div class="sub">These cities go on every person\'s sheet.</div><button type="button" class="linkbtn" id="resetCities">Reset all city lists to the defaults</button></div>';
   $("teams").innerHTML=h;
   $("exportTeam").disabled=!(sp&&TS.TEAMS.some(tm=>sp.sheets[tm.key].length));
   let msg=t?"Split "+t.rows.length+" listings from "+t.fileName+"."+(t.recolored?" "+t.recolored+" yellow row"+(t.recolored>1?"s":"")+" with HomeRun Eligible \"Yes, Income Limit of $127,840\" changed to white.":""):"Import the cleaned tour sheet (or use today's sheet above). Each person's route page fills in automatically.";
-  if(sp&&sp.unassigned.length){const cs=[...new Set(sp.unassigned.map(r=>titleCase(r[TS.C.city])||"No city"))];msg+=" "+sp.unassigned.length+" listing"+(sp.unassigned.length>1?"s are":" is")+" in a city not on any list ("+cs.join(", ")+") and "+(sp.unassigned.length>1?"were":"was")+" left out."}
+  if(sp&&sp.unassigned.length){const cs=[...new Set(sp.unassigned.map(r=>titleCase(r[TS.C.city])||"No city"))];msg+=" "+sp.unassigned.length+" listing"+(sp.unassigned.length>1?"s are":" is")+" in a city not on any list ("+cs.join(", ")+") and "+(sp.unassigned.length>1?"were":"was")+" left out. Add the city to someone's list to include it."}
+  if(cityNote){msg=cityNote+" "+msg;cityNote=""}
   $("teamStatus").textContent=msg;
 }
+// ---------- each person's city list (saved in this browser) ----------
+let cityNote="";
+const listOf=key=>key==="shared"?TS.SHARED_CITIES:TS.TEAMS.find(t=>t.key===key).cities;
+const nameOf=key=>key==="shared"?"All sheets":TS.TEAMS.find(t=>t.key===key).name+"'s list";
+function citiesChanged(focusKey){
+  plan.cities=TS.getTeamCities();
+  if(plan.team)applySplit(plan.team.rows,plan.team.date,plan.team.fileName,plan.team.recolored); // re-sort today's listings
+  else{renderTeams();save()}
+  if(focusKey){const el=$("add-"+focusKey);if(el)el.focus()}
+}
+function addCity(key,raw){
+  const city=titleCase(String(raw||"").replace(/\s+/g," ").trim());if(!city)return;
+  const norm=c=>c.toLowerCase();
+  if(listOf(key).some(c=>norm(c)===norm(city))){cityNote=city+" is already on "+nameOf(key)+".";renderTeams();return}
+  const from=["heejin","aaron","andrei","shared"].filter(k=>k!==key&&listOf(k).some(c=>norm(c)===norm(city)));
+  from.forEach(k=>{const l=listOf(k);l.splice(l.findIndex(c=>norm(c)===norm(city)),1)});
+  listOf(key).push(city);
+  cityNote="Added "+city+" to "+nameOf(key)+(from.length?" (moved from "+from.map(nameOf).join(", ")+")":"")+".";
+  citiesChanged(key);
+}
+function removeCity(key,city){const l=listOf(key),i=l.findIndex(c=>c.toLowerCase()===city.toLowerCase());if(i<0)return;l.splice(i,1);cityNote="Removed "+city+" from "+nameOf(key)+".";citiesChanged()}
+$("teams").addEventListener("submit",e=>{const f=e.target.closest(".addcity");if(!f)return;e.preventDefault();addCity(f.dataset.team,f.querySelector("input").value)});
+$("teams").addEventListener("click",e=>{const x=e.target.closest(".x[data-rm]");if(x){removeCity(x.dataset.rm,x.dataset.city);return}
+  if(e.target.id==="resetCities"){TS.setTeamCities(TS.DEFAULT_CITIES);cityNote="City lists reset to the defaults.";citiesChanged()}});
 function rowToListing(r){const C=TS.C;let open=parseClock(r[C.start],"open"),close=parseClock(r[C.end],"close");if(open!=null&&close!=null&&close<=open)close+=720;
   return mk({address:String(r[C.address]).trim(),city:titleCase(r[C.city]),price:money(r[C.price]),bs:intOrNull(r[C.bs]),ls:intOrNull(r[C.ls]),agent:String(r[C.agent]||"").trim(),open,close,hrFile:String(r[C.color]||"").toLowerCase()==="yellow"})}
 function applySplit(rows,date,fileName,recolored){
@@ -848,6 +920,7 @@ function applySplit(rows,date,fileName,recolored){
   plan.team={rows,date,fileName,split,recolored:recolored||0};
   snapshot();
   TS.TEAMS.forEach(tm=>{const p=profiles[tm.key];p.listings=split.sheets[tm.key].map(rowToListing);p.source="team";p.fileName=fileName});
+  loadCustom(rows,fileName,true);
   loadProfile(current);
   renderPlan();save();
 }
@@ -857,7 +930,7 @@ function importTeam(file){
     if(err){$("teamStatus").textContent="Couldn't read "+file.name+". Save it as .xlsx and try again.";return}
     const aoa=firstAOA(wb);
     let got=TS.fromTeamLayout(aoa);
-    if(!got){const raw=TS.processRaw(aoa,{greenMax:plan.greenMax});if(raw.error){$("teamStatus").textContent="This file doesn't look like the tour sheet or the MLS export. It needs Address and City columns.";return}got=raw}
+    if(!got){const raw=TS.processRaw(aoa,rulesNow());if(raw.error){$("teamStatus").textContent="This file doesn't look like the tour sheet or the MLS export. It needs Address and City columns.";return}got=raw}
     applySplit(got.rows,got.date,file.name,got.recolored);
   });
 }
@@ -870,15 +943,36 @@ $("teamUseClean").onclick=()=>{if(plan.clean)applySplit(plan.clean.rows,plan.cle
 $("exportTeam").onclick=()=>{const t=plan.team;if(!t)return;const sheets=TS.TEAMS.filter(tm=>t.split.sheets[tm.key].length).map(tm=>({name:tm.name,rows:t.split.sheets[tm.key]}));
   if(sheets.length)download(TS.buildXlsx(sheets),TS.baseName(t.date)+"_By_Team.xlsx")};
 
+// ---------- Custom Route: every city from today's sheet, pick which ones to route ----------
+function loadCustom(rows,fileName,noReload){
+  if(!noReload)snapshot();
+  const p=profiles.custom;p.all=rows.map(rowToListing);p.source="team";p.fileName=fileName;p.off=p.off||[];
+  if(!noReload)loadProfile(current); // keep what's on screen in step with the saved routes
+}
+function syncCustomAll(){if(current!=="custom")return;const p=profiles.custom;p.all=state.listings;state.listings=p.listings=customFiltered(p);renderCityPick()}
+function renderCityPick(){
+  const p=profiles.custom,off=new Set(p.off||[]),by=new Map();
+  (p.all||[]).forEach(l=>{const k=cityKey(l);if(!by.has(k))by.set(k,{name:titleCase(l.city)||"No city",n:0});by.get(k).n++});
+  const cities=[...by.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  $("cityPickList").innerHTML=cities.length?cities.map(([k,c])=>'<label><input type="checkbox" data-city="'+esc(k)+'"'+(off.has(k)?"":" checked")+'><span class="cname">'+esc(c.name)+'</span><b>'+c.n+'</b></label>').join(""):'<div class="sub">No listings yet. Upload Raw Data or split today\'s sheet on Plan Today\'s Tour.</div>';
+  const on=cities.filter(([k])=>!off.has(k)).length;
+  $("cityPickNote").textContent=cities.length?on+" of "+cities.length+" cities on this route · "+customFiltered(p).length+" of "+(p.all||[]).length+" listings":"";
+  $("cityAll").disabled=$("cityNone").disabled=!cities.length;
+}
+function setCityOff(next){const p=profiles.custom;p.off=[...next];snapshot();state.listings=p.listings=customFiltered(p);renderCityPick();render();autoPin()}
+$("cityPickList").addEventListener("change",e=>{const cb=e.target.closest("input[data-city]");if(!cb)return;const off=new Set(profiles.custom.off||[]);if(cb.checked)off.delete(cb.dataset.city);else off.add(cb.dataset.city);setCityOff(off)});
+$("cityAll").onclick=()=>setCityOff(new Set());
+$("cityNone").onclick=()=>setCityOff(new Set((profiles.custom.all||[]).map(cityKey)));
+
 // ---------- pages ----------
 function showView(v){
   if(v!=="plan"&&!PEOPLE[v])v="plan";
   if(v!=="plan"&&v!==current){snapshot();loadProfile(v)}
   view=v;$("planView").hidden=v!=="plan";$("routeView").hidden=v==="plan";
   document.querySelectorAll(".tab").forEach(a=>{const on=a.dataset.view===v;a.classList.toggle("on",on);if(on)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
-  document.title=(v==="plan"?"Plan Today's Tour":PEOPLE[v].name+"'s Route")+" · Broker Tour Router";
+  document.title=(v==="plan"?"Plan Today's Tour":routeTitle(v))+" · Broker Tour Router";
   if(v==="plan"){renderPlan();save()}
-  else{$("routeTitle").textContent=PEOPLE[v].name+"'s Route";$("routeH").textContent=PEOPLE[v].name+"'s stops";fillPlaceList();showEndpoints();render();autoPin()}
+  else{$("routeTitle").textContent=routeTitle(v);$("routeH").textContent=v==="custom"?"Custom route stops":PEOPLE[v].name+"'s stops";$("cityPick").hidden=v!=="custom";if(v==="custom")renderCityPick();fillPlaceList();showEndpoints();render();autoPin()}
 }
 window.addEventListener("hashchange",()=>showView(location.hash.slice(1)));
 
