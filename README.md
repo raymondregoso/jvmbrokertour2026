@@ -105,4 +105,3 @@ variable and redeploy. The "Add listing photos" button appears. Optional `CLAUDE
 
 Tour data is stored only in each person's own browser. Addresses go to the Census geocoder for pinning, and to
 Claude only if the key is set and someone uses photo or text reading.
-# jvmbrokertour2026

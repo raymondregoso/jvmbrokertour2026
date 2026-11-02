@@ -571,25 +571,24 @@ function render(){
   $("sheetMeta").textContent=state.listings.length+" listings"+(state.fileName?" · "+state.fileName:"");
   save();
 }
-// Stop list: each stop in route order, linked to Apple Maps, with LS / BS, HomeRun and hours
-let stopText="";
-function stopMeta(l,lg){const parts=["LS "+(l.ls??"–")+" / BS "+(l.bs??"–")];
-  if(l.open!=null||l.close!=null)parts.push((l.open!=null?hm(l.open):"?")+"–"+(l.close!=null?hm(l.close):"?"));
-  if(lg)parts.push("arrive "+hm(lg.arrive));return parts}
+// Stop list: each stop in route order as "Agent – Address", linked to Apple Maps, then LS / BS, HomeRun and hours.
+// Copy puts it on the clipboard as rich text, so the names stay clickable when pasted into an email.
+let stopText="",stopHtml="";
+function clock(min){if(min==null)return"?";let h=Math.floor(min/60)%24,m=Math.round(min%60);h=h%12||12;return h+":"+String(m).padStart(2,"0")}
+function stopParts(l){const p=["LS "+(l.ls??"–")+" / BS "+(l.bs??"–")];if(l.homerun)p.push("HomeRun");
+  if(l.open!=null||l.close!=null)p.push(clock(l.open)+"–"+clock(l.close));return p}
+function appleLink(l,name){return"https://maps.apple.com/place?"+new URLSearchParams({address:fullAddr(l),name}).toString().replace(/\+/g,"%20")}
 function renderStopList(run){
-  const route=run.route,ev=run.ev,wrap=$("stopListWrap");
-  if(run.blocked||!route.length){wrap.hidden=true;stopText="";return}
+  const route=run.route,wrap=$("stopListWrap");
+  if(run.blocked||!route.length){wrap.hidden=true;stopText=stopHtml="";return}
   wrap.hidden=false;
   $("stopListH").textContent="Stop list · "+route.length+" stop"+(route.length>1?"s":"");
-  const lines=[(PEOPLE[current]?PEOPLE[current].name+"'s route":"Route")+": "+START.label+" → "+END.label];
-  $("stopList").innerHTML=route.map((l,i)=>{
-    const lg=ev.legs[i],name=(l.agent?l.agent+" – ":"")+l.address;
-    const apple="https://maps.apple.com/place?"+new URLSearchParams({address:fullAddr(l),name}).toString().replace(/\+/g,"%20");
-    const google="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(fullAddr(l));
-    const meta=stopMeta(l,lg);
-    lines.push((i+1)+". "+name+" · "+meta[0]+(l.homerun?" · HomeRun":"")+(meta.slice(1).length?" · "+meta.slice(1).join(" · "):"")+"\n   "+apple);
-    return '<li><a href="'+esc(apple)+'" target="_blank" rel="noopener">'+esc(name)+'</a> <span class="meta">· '+esc(meta[0])+(l.homerun?' · <span class="hrtag">HomeRun</span>':'')+(meta.slice(1).length?' · '+esc(meta.slice(1).join(" · ")):'')+'</span><a class="g" href="'+esc(google)+'" target="_blank" rel="noopener">Google</a></li>'}).join("");
-  stopText=lines.join("\n");
+  const who=PEOPLE[current]?PEOPLE[current].name+"'s route":"Route";
+  const intro=who+": "+START.label+" → "+END.label+" · "+route.length+" stop"+(route.length>1?"s":"")+" in route order";
+  const items=route.map(l=>{const name=(l.agent?l.agent+" – ":"")+l.address;return{name,url:appleLink(l,name),parts:stopParts(l),hr:l.homerun}});
+  $("stopList").innerHTML=items.map(it=>'<li><a href="'+esc(it.url)+'" target="_blank" rel="noopener">'+esc(it.name)+'</a> <span class="meta">· '+it.parts.map(x=>x==="HomeRun"?'<span class="hrtag">HomeRun</span>':esc(x)).join(" · ")+'</span></li>').join("");
+  stopHtml='<p style="margin:0 0 8px">'+esc(intro)+'</p><ol style="margin:0;padding-left:22px">'+items.map(it=>'<li style="margin:0 0 4px"><a href="'+esc(it.url)+'">'+esc(it.name)+'</a> · '+esc(it.parts.join(" · "))+'</li>').join("")+'</ol>';
+  stopText=intro+"\n"+items.map((it,i)=>(i+1)+". "+it.name+" · "+it.parts.join(" · ")+"\n   "+it.url).join("\n");
 }
 function drawSketch(route){
   const svg=$("sketch");const pts=[START,...route,END];
@@ -922,9 +921,13 @@ const typeTimers={};
   el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();el.blur()}})});
 // Make sure the Maps buttons always use exactly what's in the Start / End boxes right now.
 ["gmaps","amaps"].forEach(id=>$(id).addEventListener("pointerdown",()=>{["start","end"].forEach(w=>{clearTimeout(typeTimers[w]);const el=$(w+"Loc"),cur=w==="start"?START:END;if(el.value.trim()&&el.value.trim()!==cur.label)setEndpoint(w,el.value)})}));
-$("copyStops").onclick=()=>{const b=$("copyStops");const done=t=>{b.textContent=t;setTimeout(()=>b.textContent="Copy stop list",1800)};
-  const fallback=()=>{const ta=$("stopCopyBox");ta.value=stopText;ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}done(ok?"Copied":"Select and copy below");if(!ok){ta.style.cssText="width:100%;min-height:120px;position:static";ta.removeAttribute("aria-hidden")}};
-  try{navigator.clipboard.writeText(stopText).then(()=>done("Copied"),fallback)}catch(e){fallback()}};
+$("copyStops").onclick=async()=>{const b=$("copyStops");const done=t=>{b.textContent=t;setTimeout(()=>b.textContent="Copy stop list",1800)};
+  if(!stopText)return;
+  try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([stopHtml],{type:"text/html"}),"text/plain":new Blob([stopText],{type:"text/plain"})})]);done("Copied with links");return}}catch(e){}
+  try{const box=document.createElement("div");box.innerHTML=stopHtml;box.setAttribute("contenteditable","true");box.style.cssText="position:fixed;left:-9999px;top:0;white-space:normal";document.body.appendChild(box);
+    const r=document.createRange();r.selectNodeContents(box);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);const ok=document.execCommand("copy");sel.removeAllRanges();box.remove();if(ok){done("Copied with links");return}}catch(e){}
+  try{await navigator.clipboard.writeText(stopText);done("Copied as text");return}catch(e){}
+  const ta=$("stopCopyBox");ta.value=stopText;ta.style.cssText="width:100%;min-height:120px;position:static";ta.removeAttribute("aria-hidden");ta.select();done("Select and copy below")};
 $("swapBtn").onclick=()=>{const t=START;START=END;END=t;showEndpoints();render()};
 document.addEventListener("click",e=>{if(e.target.closest(".pinEnd"))pinEndpoints()});
 $("importBtn").onclick=()=>$("fileIn").click();
